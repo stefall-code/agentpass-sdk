@@ -1,0 +1,258 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Radar - AgentPass v2.5</title>
+    <link rel="stylesheet" href="/static/styles.css?v=3.2">
+    <style>
+        html[data-theme="dark"] {
+            --bg: #000000; --bg-alt: #1c1c1e; --bg-elevated: #1c1c1e;
+            --bg-glass: rgba(28,28,30,0.72); --text: #f5f5f7;
+            --text-secondary: #98989d; --text-tertiary: #636366;
+            --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14);
+            --nav-height: 52px;
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "Segoe UI", "Noto Sans SC", sans-serif;
+            --mono: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+            --blue: #0071e3; --blue-light: rgba(0,113,227,0.15);
+            --gray6: #2c2c2e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; background: #020408; color: #f5f5f7; font-family: var(--font, sans-serif); }
+
+        .rr-main { padding: calc(var(--nav-height, 52px) + 12px) 20px 40px; }
+
+        .rr-top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; margin-bottom: 16px;
+            background: rgba(255,255,255,0.03); border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .rr-top-stats { display: flex; gap: 20px; align-items: center; }
+        .rr-top-stat { text-align: center; }
+        .rr-top-stat .val { font-size: 1.3rem; font-weight: 800; }
+        .rr-top-stat .lbl { font-size: 0.5rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; }
+        .rr-top-actions { display: flex; gap: 8px; }
+
+        .rr-btn {
+            padding: 8px 16px; border-radius: 8px; border: none;
+            font-size: 0.78rem; cursor: pointer; font-weight: 600; transition: all 0.2s;
+        }
+        .rr-btn-danger { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+        .rr-btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .rr-btn-ghost { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.08); }
+        .rr-btn-ghost:hover { background: rgba(255,255,255,0.08); }
+        .rr-btn-attack { background: linear-gradient(135deg,#ef4444,#f59e0b); color: #fff; box-shadow: 0 0 16px rgba(239,68,68,0.25); }
+        .rr-btn-attack:hover { opacity: 0.85; }
+
+        .rr-layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+        @media (max-width: 960px) { .rr-layout { grid-template-columns: 1fr; } }
+
+        .rr-radar {
+            position: relative; min-height: 620px;
+            background: radial-gradient(ellipse at 50% 50%, #0a1628 0%, #050a14 50%, #020408 100%);
+            border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+            overflow: hidden;
+        }
+        .rr-radar canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+        .rr-radar-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10;
+            display: flex; flex-direction: column; pointer-events: none;
+        }
+        .rr-radar-overlay > * { pointer-events: auto; }
+
+        .rr-radar-header {
+            padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .rr-radar-title { font-size: 0.7rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; }
+
+        .rr-radar-center { flex: 1; position: relative; }
+
+        .rr-radar-footer {
+            padding: 10px 20px; background: rgba(0,0,0,0.4);
+            border-top: 1px solid rgba(255,255,255,0.04);
+            display: flex; justify-content: center; gap: 24px; font-size: 0.6rem; color: rgba(255,255,255,0.25);
+        }
+        .rr-radar-footer span { display: flex; align-items: center; gap: 5px; }
+        .rr-radar-footer .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+        .rr-right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+        .rr-card {
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+            padding: 20px;
+        }
+        .rr-card h3 { font-size: 0.9rem; color: #f87171; margin-bottom: 14px; }
+
+        .rr-threat-item {
+            padding: 10px 14px; border-radius: 10px; margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);
+            transition: all 0.3s;
+        }
+        .rr-threat-item.critical { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.06); }
+        .rr-threat-item.high { border-color: rgba(248,113,113,0.2); background: rgba(248,113,113,0.04); }
+        .rr-threat-item.medium { border-color: rgba(251,191,36,0.2); background: rgba(251,191,36,0.04); }
+        .rr-threat-agent { font-size: 0.82rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        .rr-threat-detail { font-size: 0.68rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+        .rr-threat-risk { font-size: 0.72rem; font-weight: 800; }
+
+        .rr-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .rr-badge-critical { background: rgba(239,68,68,0.2); color: #ef4444; animation: rrBlink 0.8s ease-in-out infinite; }
+        .rr-badge-high { background: rgba(248,113,113,0.15); color: #f87171; }
+        .rr-badge-medium { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .rr-badge-low { background: rgba(52,211,153,0.15); color: #34d399; }
+        @keyframes rrBlink { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+        .rr-attack-log {
+            max-height: 220px; overflow-y: auto;
+            font-family: var(--mono); font-size: 0.65rem;
+            background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;
+        }
+        .rr-attack-item {
+            padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+            display: flex; gap: 6px; align-items: center;
+            animation: rrSlide 0.25s ease;
+        }
+        @keyframes rrSlide { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+        .rr-attack-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+        .rr-attack-dot.deny { background: #f87171; }
+        .rr-attack-dot.revoke { background: #ef4444; }
+        .rr-attack-dot.allow { background: #34d399; }
+        .rr-attack-time { color: rgba(255,255,255,0.2); min-width: 50px; }
+        .rr-attack-agent { color: #c4b5fd; font-weight: 600; }
+        .rr-attack-action { color: rgba(255,255,255,0.4); flex: 1; }
+
+        .rr-type-row {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .rr-type-icon { font-size: 1.1rem; }
+        .rr-type-name { font-size: 0.78rem; color: rgba(255,255,255,0.6); flex: 1; }
+        .rr-type-count { font-size: 0.9rem; font-weight: 800; }
+        .rr-type-bar { width: 60px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+        .rr-type-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+        .rr-signal-legend {
+            position: absolute; bottom: 60px; left: 20px; z-index: 20;
+            font-size: 0.6rem; color: rgba(255,255,255,0.25);
+            pointer-events: none;
+        }
+        .rr-signal-legend div { margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+        .rr-signal-dot { width: 8px; height: 8px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="/">
+          <span class="nav-title">⚠️ Threat Radar</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Console</a>
+          <a href="/audit">Audit</a>
+          <a href="/chain">Chain</a>
+          <a href="/trust">Trust</a>
+          <a href="/risk" class="active">Risk</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="rr-main">
+        <div class="rr-top-bar">
+            <div class="rr-top-stats">
+                <div class="rr-top-stat"><div class="val" style="color:#fbbf24" id="statTotal">0</div><div class="lbl">Total</div></div>
+                <div class="rr-top-stat"><div class="val" style="color:#f87171" id="statDenied">0</div><div class="lbl">Denied</div></div>
+                <div class="rr-top-stat"><div class="val" style="color:#fbbf24" id="statDenyRate">0%</div><div class="lbl">Deny Rate</div></div>
+                <div class="rr-top-stat"><div class="val" style="color:#ef4444" id="statHighRisk">0</div><div class="lbl">High Risk</div></div>
+                <div class="rr-top-stat"><div class="val" style="color:#ef4444" id="statAutoRevoke">0</div><div class="lbl">🔥 Auto-Revoke</div></div>
+                <div class="rr-top-stat"><div class="val" style="color:#ef4444" id="statRevokedAgents">0</div><div class="lbl">Revoked</div></div>
+            </div>
+            <div class="rr-top-actions">
+                <button class="rr-btn rr-btn-ghost" onclick="RR.refresh()">🔄 刷新</button>
+                <button class="rr-btn rr-btn-attack" onclick="RR.simulateAttack()">🔥 模拟攻击</button>
+                <button class="rr-btn rr-btn-danger" onclick="RR.clearRevoked()">清除记录</button>
+            </div>
+        </div>
+
+        <div class="rr-layout">
+            <div>
+                <div class="rr-radar" id="radarArea">
+                    <canvas id="radarCanvas"></canvas>
+                    <div class="rr-radar-overlay">
+                        <div class="rr-radar-header">
+                            <div class="rr-radar-title">📡 Threat Monitoring Radar</div>
+                            <div style="font-size:0.6rem;color:rgba(255,255,255,0.2)">中心 = 高风险 · 外圈 = 低风险</div>
+                        </div>
+                        <div class="rr-radar-center" id="radarCenter"></div>
+                        <div class="rr-radar-footer">
+                            <span><span class="dot" style="background:#ef4444"></span> Critical</span>
+                            <span><span class="dot" style="background:#f87171"></span> High</span>
+                            <span><span class="dot" style="background:#fbbf24"></span> Medium</span>
+                            <span><span class="dot" style="background:#34d399"></span> Low</span>
+                        </div>
+                    </div>
+                    <div class="rr-signal-legend">
+                        <div><span class="rr-signal-dot" style="background:#ef4444;box-shadow:0 0 6px #ef4444"></span> Auto-Revoke 爆点</div>
+                        <div><span class="rr-signal-dot" style="background:#f87171"></span> Deny 信号</div>
+                        <div><span class="rr-signal-dot" style="background:#34d399"></span> Allow 信号</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rr-right-panel">
+                <div class="rr-card">
+                    <h3>🎯 最高风险 Agent</h3>
+                    <div id="topThreats">
+                        <div style="color:rgba(255,255,255,0.25);text-align:center;padding:16px;font-size:0.82rem">加载中...</div>
+                    </div>
+                </div>
+
+                <div class="rr-card">
+                    <h3>📊 攻击类型统计</h3>
+                    <div id="attackTypes">
+                        <div class="rr-type-row">
+                            <span class="rr-type-icon">🔄</span>
+                            <span class="rr-type-name">Replay Attack</span>
+                            <span class="rr-type-count" style="color:#c4b5fd" id="typeReplay">0</span>
+                            <div class="rr-type-bar"><div class="rr-type-bar-fill" id="barReplay" style="width:0%;background:#c4b5fd"></div></div>
+                        </div>
+                        <div class="rr-type-row">
+                            <span class="rr-type-icon">⚠️</span>
+                            <span class="rr-type-name">Escalation</span>
+                            <span class="rr-type-count" style="color:#fbbf24" id="typeEscalation">0</span>
+                            <div class="rr-type-bar"><div class="rr-type-bar-fill" id="barEscalation" style="width:0%;background:#fbbf24"></div></div>
+                        </div>
+                        <div class="rr-type-row">
+                            <span class="rr-type-icon">🔥</span>
+                            <span class="rr-type-name">Auto-Revoke</span>
+                            <span class="rr-type-count" style="color:#ef4444" id="typeAutoRevoke">0</span>
+                            <div class="rr-type-bar"><div class="rr-type-bar-fill" id="barAutoRevoke" style="width:0%;background:#ef4444"></div></div>
+                        </div>
+                        <div class="rr-type-row">
+                            <span class="rr-type-icon">🚫</span>
+                            <span class="rr-type-name">Capability Deny</span>
+                            <span class="rr-type-count" style="color:#f87171" id="typeCapDeny">0</span>
+                            <div class="rr-type-bar"><div class="rr-type-bar-fill" id="barCapDeny" style="width:0%;background:#f87171"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rr-card">
+                    <h3>📡 实时攻击流</h3>
+                    <div class="rr-attack-log" id="attackLog">
+                        <div style="color:rgba(255,255,255,0.2);text-align:center;padding:16px">等待信号...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/mode.js?v=1.0"></script><script src="/static/iam-explain.js?v=1.2"></script>
+    <script src="/static/risk.js?v=6.1"></script>
+</body>
+</html>

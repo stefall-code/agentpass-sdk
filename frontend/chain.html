@@ -1,0 +1,297 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain Viewer - Attack Replay Player - AgentPass v2.5</title>
+    <link rel="stylesheet" href="/static/styles.css?v=3.2">
+    <style>
+        html[data-theme="dark"] {
+            --bg: #000000; --bg-alt: #1c1c1e; --bg-elevated: #1c1c1e;
+            --bg-glass: rgba(28,28,30,0.72); --text: #f5f5f7;
+            --text-secondary: #98989d; --text-tertiary: #636366;
+            --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14);
+            --nav-height: 52px;
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "Segoe UI", "Noto Sans SC", sans-serif;
+            --mono: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+            --blue: #0071e3; --blue-light: rgba(0,113,227,0.15);
+            --gray6: #2c2c2e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; background: #050a14; color: #f5f5f7; font-family: var(--font, sans-serif); }
+
+        .cp-main { max-width: 1440px; margin: 0 auto; padding: calc(var(--nav-height, 52px) + 16px) 20px 40px; }
+
+        .cp-card {
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+            padding: 20px; margin-bottom: 16px;
+        }
+
+        .cp-scene-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .cp-scene-btn {
+            padding: 10px 20px; border-radius: 10px; border: none;
+            font-size: 0.82rem; cursor: pointer; font-weight: 600; transition: all 0.25s;
+            position: relative; overflow: hidden;
+        }
+        .cp-scene-btn::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: var(--btn-accent, #0071e3); opacity: 0.8;
+        }
+        .cp-scene-btn.normal { background: rgba(52,211,153,0.08); color: #34d399; border: 1px solid rgba(52,211,153,0.2); --btn-accent: #34d399; }
+        .cp-scene-btn.escalation { background: rgba(251,191,36,0.08); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); --btn-accent: #fbbf24; }
+        .cp-scene-btn.replay { background: rgba(167,139,250,0.08); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.2); --btn-accent: #c4b5fd; }
+        .cp-scene-btn.autorevoke { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); --btn-accent: #ef4444; }
+        .cp-scene-btn.promptinject { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); --btn-accent: #a78bfa; }
+        .cp-scene-btn.progressivedemo { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); --btn-accent: #3b82f6; }
+        .cp-scene-btn:hover { transform: translateY(-2px); }
+        .cp-scene-btn.active { box-shadow: 0 0 20px var(--btn-glow, rgba(0,113,227,0.3)); transform: translateY(-2px); }
+        .cp-scene-btn.normal.active { --btn-glow: rgba(52,211,153,0.3); }
+        .cp-scene-btn.escalation.active { --btn-glow: rgba(251,191,36,0.3); }
+        .cp-scene-btn.replay.active { --btn-glow: rgba(167,139,250,0.3); }
+        .cp-scene-btn.autorevoke.active { --btn-glow: rgba(239,68,68,0.3); }
+        .cp-scene-btn.promptinject.active { --btn-glow: rgba(167,139,250,0.3); }
+        .cp-scene-btn.progressivedemo.active { --btn-glow: rgba(59,130,246,0.3); }
+
+        .cp-layout { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+        @media (max-width: 960px) { .cp-layout { grid-template-columns: 1fr; } }
+
+        .cp-player {
+            position: relative; min-height: 520px;
+            background: radial-gradient(ellipse at 50% 40%, #0d1f3c 0%, #070e1a 40%, #020408 80%, #000 100%);
+            border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        .cp-player canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+        .cp-player-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10;
+            display: flex; flex-direction: column; pointer-events: none;
+        }
+        .cp-player-overlay > * { pointer-events: auto; }
+
+        .cp-player-top {
+            padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .cp-player-title { font-size: 0.7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+
+        .cp-player-center { flex: 1; position: relative; }
+
+        .cp-player-bottom {
+            padding: 12px 16px; background: rgba(0,0,0,0.5);
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .cp-controls { display: flex; align-items: center; gap: 12px; }
+        .cp-ctrl-btn {
+            width: 36px; height: 36px; border-radius: 8px; border: none;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6);
+            cursor: pointer; font-size: 1rem; display: grid; place-items: center;
+            transition: all 0.2s;
+        }
+        .cp-ctrl-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        .cp-ctrl-btn.play { width: 44px; height: 44px; background: linear-gradient(135deg,#7c3aed,#3b82f6); color: #fff; font-size: 1.1rem; border-radius: 10px; }
+        .cp-ctrl-btn.play:hover { opacity: 0.85; }
+
+        .cp-progress { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; cursor: pointer; }
+        .cp-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,#7c3aed,#3b82f6); transition: width 0.3s ease; width: 0%; }
+
+        .cp-step-label { font-size: 0.65rem; color: rgba(255,255,255,0.3); min-width: 60px; text-align: right; }
+
+        .cp-timeline {
+            display: flex; gap: 4px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px;
+        }
+        .cp-tl-step {
+            flex-shrink: 0; padding: 6px 12px; border-radius: 6px;
+            font-size: 0.62rem; cursor: pointer; transition: all 0.25s;
+            border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);
+            color: rgba(255,255,255,0.3); white-space: nowrap;
+        }
+        .cp-tl-step.done { background: rgba(52,211,153,0.08); color: rgba(52,211,153,0.7); border-color: rgba(52,211,153,0.15); }
+        .cp-tl-step.done.deny-step { background: rgba(248,113,113,0.08); color: rgba(248,113,113,0.7); border-color: rgba(248,113,113,0.15); }
+        .cp-tl-step.done.revoke-step { background: rgba(239,68,68,0.1); color: rgba(239,68,68,0.8); border-color: rgba(239,68,68,0.2); }
+        .cp-tl-step.current { background: rgba(167,139,250,0.15); color: #c4b5fd; border-color: rgba(167,139,250,0.3); box-shadow: 0 0 12px rgba(167,139,250,0.2); }
+        .cp-tl-step:hover { border-color: rgba(255,255,255,0.15); }
+
+        .cp-right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+        .cp-detail {
+            background: rgba(0,0,0,0.25); border-radius: 12px; padding: 18px;
+            border: 1px solid rgba(255,255,255,0.06); position: sticky; top: 72px;
+        }
+        .cp-detail h3 { font-size: 0.85rem; color: #c4b5fd; margin-bottom: 12px; }
+        .cp-detail-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.76rem;
+        }
+        .cp-detail-row:last-child { border-bottom: none; }
+        .cp-detail-key { color: rgba(255,255,255,0.35); }
+        .cp-detail-val { color: rgba(255,255,255,0.8); font-weight: 500; text-align: right; max-width: 200px; word-break: break-all; }
+
+        .cp-why-blocked {
+            margin-top: 14px; padding: 14px; border-radius: 10px;
+            background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2);
+            display: none;
+        }
+        .cp-why-blocked.show { display: block; animation: cpWhySlide 0.4s ease; }
+        @keyframes cpWhySlide { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+        .cp-why-title { font-size: 0.82rem; font-weight: 700; color: #ef4444; margin-bottom: 8px; }
+        .cp-why-reason {
+            padding: 6px 10px; border-radius: 6px; margin-bottom: 4px;
+            font-size: 0.72rem; background: rgba(239,68,68,0.08); color: rgba(255,255,255,0.6);
+            border-left: 3px solid #ef4444;
+        }
+
+        .cp-event-stream {
+            max-height: 200px; overflow-y: auto;
+            font-family: var(--mono); font-size: 0.68rem;
+            background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;
+        }
+        .cp-ev-item {
+            padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+            display: flex; gap: 6px; align-items: center;
+            animation: cpSlide 0.25s ease;
+        }
+        @keyframes cpSlide { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+        .cp-ev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .cp-ev-dot.allow { background: #34d399; }
+        .cp-ev-dot.deny { background: #f87171; }
+        .cp-ev-dot.revoke { background: #ef4444; }
+        .cp-ev-time { color: rgba(255,255,255,0.2); min-width: 55px; }
+        .cp-ev-agent { color: #c4b5fd; font-weight: 600; }
+        .cp-ev-action { color: rgba(255,255,255,0.4); }
+
+        .cp-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .cp-badge-allow { background: rgba(52,211,153,0.15); color: #34d399; }
+        .cp-badge-deny { background: rgba(248,113,113,0.15); color: #f87171; }
+        .cp-badge-revoke { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .cp-live-dot {
+            width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+            margin-right: 5px; vertical-align: middle;
+        }
+        .cp-live-dot.on { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.5); animation: livePulse 2s ease-in-out infinite; }
+        .cp-live-dot.off { background: #636366; }
+        @keyframes livePulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+        .cp-empty { color: rgba(255,255,255,0.25); text-align: center; padding: 40px; font-size: 0.85rem; }
+
+        .cp-insight-box {
+            margin-top: 12px; padding: 14px; border-radius: 10px;
+            font-size: 0.82rem; line-height: 1.6;
+        }
+        .cp-insight-box.green { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.2); }
+        .cp-insight-box.red { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); }
+        .cp-insight-box.yellow { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); }
+        .cp-insight-box.purple { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); }
+        .cp-insight-title { font-weight: 700; margin-bottom: 4px; }
+        .cp-insight-title.green { color: #34d399; }
+        .cp-insight-title.red { color: #ef4444; }
+        .cp-insight-title.yellow { color: #fbbf24; }
+        .cp-insight-title.purple { color: #c4b5fd; }
+
+        @keyframes cpBurst {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="/">
+          <span class="nav-title">🔗 Chain Viewer</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Console</a>
+          <a href="/audit">Audit</a>
+          <a href="/chain" class="active">Chain</a>
+          <a href="/trust">Trust</a>
+          <a href="/risk">Risk</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="cp-main">
+        <div class="cp-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <div>
+                    <div style="font-size:0.95rem;font-weight:700;color:#c4b5fd">🎬 Attack Replay Player</div>
+                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.3);margin-top:2px">选择场景 → 播放 → 观看攻击如何被拦截</div>
+                </div>
+                <div style="font-size:0.7rem;color:rgba(255,255,255,0.3)">
+                    <span class="cp-live-dot off" id="wsDot"></span>
+                    <span id="wsLabel">未连接</span>
+                </div>
+            </div>
+            <div class="cp-scene-row">
+                <button class="cp-scene-btn normal" onclick="CP.selectScene('normal')">✅ 正常流程</button>
+                <button class="cp-scene-btn escalation" onclick="CP.selectScene('escalation')">⚠️ 越权攻击</button>
+                <button class="cp-scene-btn replay" onclick="CP.selectScene('replay')">🔄 重放攻击</button>
+                <button class="cp-scene-btn autorevoke" onclick="CP.selectScene('autorevoke')">🔥 Auto Revoke</button>
+                <button class="cp-scene-btn promptinject" onclick="CP.selectScene('promptinject')">🛡️ Prompt注入</button>
+                <button class="cp-scene-btn progressivedemo" onclick="CP.selectScene('progressivedemo')">🎯 四步渐进演示</button>
+            </div>
+        </div>
+
+        <div class="cp-layout">
+            <div>
+                <div class="cp-player" id="playerArea">
+                    <canvas id="playerCanvas"></canvas>
+                    <div class="cp-player-overlay">
+                        <div class="cp-player-top">
+                            <div class="cp-player-title" id="sceneTitle">选择一个场景开始播放</div>
+                            <div style="display:flex;gap:12px;align-items:center">
+                                <div style="text-align:center"><div style="font-size:1.1rem;font-weight:800;color:#34d399" id="pAllow">0</div><div style="font-size:0.5rem;color:rgba(255,255,255,0.25);text-transform:uppercase">Allow</div></div>
+                                <div style="text-align:center"><div style="font-size:1.1rem;font-weight:800;color:#f87171" id="pDeny">0</div><div style="font-size:0.5rem;color:rgba(255,255,255,0.25);text-transform:uppercase">Deny</div></div>
+                                <div style="text-align:center"><div style="font-size:1.1rem;font-weight:800;color:#ef4444" id="pRevoke">0</div><div style="font-size:0.5rem;color:rgba(255,255,255,0.25);text-transform:uppercase">Revoke</div></div>
+                            </div>
+                        </div>
+                        <div class="cp-player-center" id="playerCenter">
+                            <div class="cp-empty" id="playerEmpty">← 选择场景，然后点击 ▶ 播放</div>
+                        </div>
+                        <div class="cp-player-bottom">
+                            <div class="cp-controls">
+                                <button class="cp-ctrl-btn" onclick="CP.stepBack()" title="上一步">⏮</button>
+                                <button class="cp-ctrl-btn play" onclick="CP.togglePlay()" id="playBtn" title="播放/暂停">▶</button>
+                                <button class="cp-ctrl-btn" onclick="CP.stepForward()" title="下一步">⏭</button>
+                                <div class="cp-progress" onclick="CP.seekTo(event)" id="progressBar">
+                                    <div class="cp-progress-fill" id="progressFill"></div>
+                                </div>
+                                <div class="cp-step-label" id="stepLabel">0 / 0</div>
+                            </div>
+                            <div class="cp-timeline" id="timeline"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cp-card" style="margin-top:16px">
+                    <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:10px">📡 Live Event Stream</div>
+                    <div class="cp-event-stream" id="liveStream">
+                        <div class="cp-empty">等待事件...</div>
+                    </div>
+                    <div id="insightArea"></div>
+                </div>
+            </div>
+
+            <div class="cp-right-panel">
+                <div class="cp-detail" id="detailPanel">
+                    <h3>🔍 Step Detail</h3>
+                    <div id="detailContent" style="color:rgba(255,255,255,0.3);font-size:0.82rem">播放后点击步骤查看详情</div>
+                    <div class="cp-why-blocked" id="whyBlocked">
+                        <div class="cp-why-title">❓ WHY BLOCKED?</div>
+                        <div id="whyReasons"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/mode.js?v=1.0"></script><script src="/static/iam-explain.js?v=1.2"></script>
+    <script src="/static/chain.js?v=6.2"></script>
+</body>
+</html>

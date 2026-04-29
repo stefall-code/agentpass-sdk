@@ -1,0 +1,358 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞书安全交互 - AgentPass v2.5</title>
+    <link rel="stylesheet" href="/static/styles.css?v=3.2">
+    <style>
+        html[data-theme="dark"] {
+            --bg: #000000; --bg-alt: #1c1c1e; --bg-elevated: #1c1c1e;
+            --bg-glass: rgba(28,28,30,0.72); --text: #f5f5f7;
+            --text-secondary: #98989d; --text-tertiary: #636366;
+            --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14);
+            --nav-height: 52px;
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "Segoe UI", "Noto Sans SC", sans-serif;
+            --mono: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+            --blue: #0071e3; --blue-light: rgba(0,113,227,0.15);
+            --gray6: #2c2c2e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; background: #020408; color: #f5f5f7; font-family: var(--font, sans-serif); }
+        .fs-main { padding: calc(var(--nav-height, 52px) + 12px) 20px 40px; max-width: 1400px; margin: 0 auto; }
+
+        .fs-top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 20px; margin-bottom: 20px;
+            background: rgba(255,255,255,0.03); border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .fs-top-stats { display: flex; gap: 24px; align-items: center; }
+        .fs-top-stat { text-align: center; }
+        .fs-top-stat .val { font-size: 1.4rem; font-weight: 800; }
+        .fs-top-stat .lbl { font-size: 0.5rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; }
+        .fs-top-actions { display: flex; gap: 8px; }
+
+        .fs-btn {
+            padding: 8px 16px; border-radius: 8px; border: none;
+            font-size: 0.78rem; cursor: pointer; font-weight: 600; transition: all 0.2s;
+        }
+        .fs-btn-primary { background: linear-gradient(135deg,#0071e3,#64d2ff); color: #fff; }
+        .fs-btn-primary:hover { opacity: 0.85; }
+        .fs-btn-danger { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+        .fs-btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .fs-btn-ghost { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.08); }
+        .fs-btn-ghost:hover { background: rgba(255,255,255,0.08); }
+        .fs-btn-warn { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+        .fs-btn-warn:hover { background: rgba(251,191,36,0.2); }
+        .fs-btn-attack { background: linear-gradient(135deg,#ef4444,#f59e0b); color: #fff; box-shadow: 0 0 16px rgba(239,68,68,0.25); }
+
+        .fs-layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+        @media (max-width: 960px) { .fs-layout { grid-template-columns: 1fr; } }
+
+        .fs-card {
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+            padding: 20px; margin-bottom: 16px;
+        }
+        .fs-card h3 { font-size: 0.9rem; margin-bottom: 14px; }
+
+        .fs-chat {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 16px;
+            min-height: 440px; max-height: 520px; overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.04);
+            scroll-behavior: smooth;
+        }
+        .fs-msg { margin-bottom: 14px; animation: fsSlide 0.3s ease; position: relative; }
+        @keyframes fsSlide { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .fs-msg-user { display: flex; justify-content: flex-end; }
+        .fs-msg-user .fs-msg-bubble {
+            background: rgba(0,113,227,0.15); border: 1px solid rgba(0,113,227,0.25);
+            border-radius: 14px 14px 4px 14px; padding: 10px 14px;
+            max-width: 80%; font-size: 0.82rem; color: #f5f5f7;
+        }
+        .fs-msg-bot { display: flex; justify-content: flex-start; flex-direction: column; }
+        .fs-msg-bot .fs-msg-bubble {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px 14px 14px 4px; padding: 10px 14px;
+            max-width: 90%; font-size: 0.82rem; color: rgba(255,255,255,0.8);
+            white-space: pre-wrap; cursor: pointer; transition: all 0.2s;
+        }
+        .fs-msg-bot .fs-msg-bubble:hover { border-color: rgba(255,255,255,0.12); }
+        .fs-msg-bot .fs-msg-bubble.denied { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2); }
+        .fs-msg-bot .fs-msg-bubble.success { background: rgba(52,211,153,0.06); border-color: rgba(52,211,153,0.2); }
+        .fs-msg-bot .fs-msg-bubble.replay { background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.2); }
+        .fs-msg-bot .fs-msg-bubble.degraded { background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.2); }
+        .fs-msg-bot .fs-msg-bubble.revoked { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+
+        .fs-msg-label { font-size: 0.6rem; color: rgba(255,255,255,0.25); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .fs-msg-user .fs-msg-label { justify-content: flex-end; }
+
+        .fs-security-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 10px; border-radius: 20px;
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+        .fs-tag-allow { background: rgba(52,211,153,0.15); color: #34d399; }
+        .fs-tag-deny { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .fs-tag-replay { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .fs-tag-revoked { background: rgba(239,68,68,0.2); color: #ef4444; animation: fsTagPulse 1s ease infinite; }
+        @keyframes fsTagPulse { 0%,100%{opacity:1}50%{opacity:0.5} }
+
+        .fs-msg-expand {
+            display: none; margin-top: 8px; padding: 10px 12px;
+            background: rgba(0,0,0,0.3); border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.72rem; color: rgba(255,255,255,0.5);
+            font-family: var(--mono);
+        }
+        .fs-msg-expand.open { display: block; animation: fsSlide 0.2s ease; }
+        .fs-expand-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .fs-expand-row:last-child { border-bottom: none; }
+        .fs-expand-key { color: rgba(255,255,255,0.35); }
+        .fs-expand-val { color: rgba(255,255,255,0.7); font-weight: 600; }
+
+        .fs-input-row { display: flex; gap: 8px; margin-top: 12px; }
+        .fs-input {
+            flex: 1; padding: 10px 14px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04);
+            color: #f5f5f7; font-size: 0.85rem; outline: none;
+        }
+        .fs-input:focus { border-color: rgba(0,113,227,0.4); }
+        .fs-input::placeholder { color: rgba(255,255,255,0.2); }
+
+        .fs-demo-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;
+        }
+        .fs-demo-card {
+            padding: 14px 16px; border-radius: 10px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.06); transition: all 0.2s;
+            background: rgba(255,255,255,0.02);
+        }
+        .fs-demo-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.12); }
+        .fs-demo-card .dc-icon { font-size: 1.4rem; margin-bottom: 6px; }
+        .fs-demo-card .dc-title { font-size: 0.78rem; font-weight: 700; margin-bottom: 2px; }
+        .fs-demo-card .dc-desc { font-size: 0.6rem; color: rgba(255,255,255,0.35); }
+        .fs-demo-card.dc-normal { border-color: rgba(52,211,153,0.2); }
+        .fs-demo-card.dc-normal:hover { background: rgba(52,211,153,0.06); }
+        .fs-demo-card.dc-escalation { border-color: rgba(248,113,113,0.2); }
+        .fs-demo-card.dc-escalation:hover { background: rgba(248,113,113,0.06); }
+        .fs-demo-card.dc-replay { border-color: rgba(251,191,36,0.2); }
+        .fs-demo-card.dc-replay:hover { background: rgba(251,191,36,0.06); }
+        .fs-demo-card.dc-autorevoke { border-color: rgba(239,68,68,0.3); }
+        .fs-demo-card.dc-autorevoke:hover { background: rgba(239,68,68,0.06); }
+
+        .fs-chain-step {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.75rem;
+        }
+        .fs-chain-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .fs-chain-dot.allow { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.4); }
+        .fs-chain-dot.deny { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,0.4); }
+        .fs-chain-dot.revoke { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); animation: fsTagPulse 1s ease infinite; }
+        .fs-chain-dot.info { background: #0071e3; box-shadow: 0 0 6px rgba(0,113,227,0.4); }
+        .fs-chain-label { color: rgba(255,255,255,0.6); flex: 1; }
+        .fs-chain-detail { color: rgba(255,255,255,0.3); font-size: 0.65rem; }
+
+        .fs-event-item {
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.72rem;
+        }
+        .fs-event-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .fs-event-type { font-weight: 600; }
+        .fs-event-time { color: rgba(255,255,255,0.2); font-size: 0.6rem; }
+        .fs-event-detail { color: rgba(255,255,255,0.35); margin-top: 4px; font-size: 0.65rem; }
+
+        .fs-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .fs-badge-success { background: rgba(52,211,153,0.15); color: #34d399; }
+        .fs-badge-denied { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .fs-badge-replay { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .fs-badge-revoked { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .fs-trust-bar {
+            height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-top: 8px;
+        }
+        .fs-trust-fill {
+            height: 100%; border-radius: 3px; transition: width 0.8s ease, background 0.8s ease;
+        }
+
+        .fs-global-alert {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+            padding: 16px 24px; text-align: center;
+            background: linear-gradient(135deg, rgba(239,68,68,0.9), rgba(220,38,38,0.9));
+            color: white; font-weight: 700; font-size: 1rem;
+            animation: fsAlertIn 0.4s ease;
+            backdrop-filter: blur(12px);
+        }
+        @keyframes fsAlertIn { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        .fs-trust-anim {
+            transition: all 0.6s ease;
+        }
+        .fs-trust-anim.down {
+            color: #ef4444 !important;
+            animation: fsTrustDown 0.6s ease;
+        }
+        @keyframes fsTrustDown { 0%{transform:scale(1)}30%{transform:scale(1.2);color:#ef4444}100%{transform:scale(1)} }
+
+        .fs-quick-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+        .fs-quick-btn {
+            padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.5);
+            font-size: 0.7rem; cursor: pointer; transition: all 0.2s;
+        }
+        .fs-quick-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+        @keyframes fsAttackPulse { 0%,100%{box-shadow:0 0 20px rgba(239,68,68,0.4)}50%{box-shadow:0 0 30px rgba(239,68,68,0.7)} }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="/">
+          <svg class="nav-logo" width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="7" fill="url(#logoGrad2)"/>
+            <path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs><linearGradient id="logoGrad2" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#0071E3"/><stop offset="1" stop-color="#64D2FF"/></linearGradient></defs>
+          </svg>
+          <span class="nav-title">飞书安全交互</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Console</a>
+          <a href="/audit">Audit</a>
+          <a href="/chain">Chain</a>
+          <a href="/trust">Trust</a>
+          <a href="/risk">Risk</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="fs-main">
+        <div class="fs-top-bar">
+            <div class="fs-top-stats">
+                <div class="fs-top-stat"><div class="val" style="color:#f5f5f7" id="statEvents">0</div><div class="lbl">Events</div></div>
+                <div class="fs-top-stat"><div class="val" style="color:#34d399" id="statSuccess">0</div><div class="lbl">✅ Success</div></div>
+                <div class="fs-top-stat"><div class="val" style="color:#ef4444" id="statDenied">0</div><div class="lbl">❌ Denied</div></div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,0.06)"></div>
+                <div class="fs-top-stat">
+                    <div class="val fs-trust-anim" style="font-size:1rem" id="statTrust">0.92</div>
+                    <div class="lbl">Trust Score</div>
+                </div>
+                <div class="fs-top-stat"><div class="val" style="font-size:0.9rem" id="statMode">—</div><div class="lbl">Mode</div></div>
+            </div>
+            <div class="fs-top-actions">
+                <button class="fs-btn" onclick="FS.runKillerSummary()" id="btnSummary" style="background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-weight:800;font-size:0.88rem;padding:10px 20px;box-shadow:0 0 20px rgba(239,68,68,0.3)">🔥 为什么需要 AgentPass</button>
+                <button class="fs-btn" onclick="FS.runAttackDemo()" id="btnAttack" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:800;font-size:0.88rem;padding:10px 20px;box-shadow:0 0 20px rgba(239,68,68,0.4);animation:fsAttackPulse 2s ease infinite">⚔️ 运行真实攻击测试</button>
+                <button class="fs-btn" onclick="FS.runJudgeVerify()" id="btnJudge" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);color:#fff;font-weight:700;font-size:0.85rem;padding:10px 18px">🔍 可验证性证明</button>
+                <div style="width:1px;height:32px;background:rgba(255,255,255,0.08)"></div>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.run4StepDemo()" id="btnDemo">🎯 四步演示</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runCoreInnovationDemo()" id="btnCore">🔥 核心创新</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runRevocationDemo()" id="btnRevocation">🔐 四级撤销</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runOWASPDemo()" id="btnOWASP">🛡️ OWASP</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runP2Demo()" id="btnP2">⚙️ P2</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runOAuthDemo()" id="btnOAuth">🎫 OAuth</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runProtocolsDemo()" id="btnProtocols">🌐 MCP/A2A</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runBrokerDemo()" id="btnBroker">🔑 凭证经纪人</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.runAlignmentDemo()" id="btnAlignment">🛡️ 对齐检查</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.connectFeishu()" id="btnConnect">🚀 连接</button>
+                <button class="fs-btn fs-btn-ghost" onclick="FS.resetTrust()">🔄 重置</button>
+            </div>
+        </div>
+
+        <div class="fs-layout">
+            <div>
+                <div class="fs-card">
+                    <h3 style="color:#0071e3">💬 飞书安全对话</h3>
+                    <div class="fs-chat" id="chatArea">
+                        <div class="fs-msg fs-msg-bot">
+                            <div class="fs-msg-label">🤖 AgentPass Security</div>
+                            <div class="fs-msg-bubble">🤖 你好！我是 AgentPass 安全助手。
+
+我可以帮你查询数据、生成报告。
+所有请求都会经过 IAM 安全校验。
+
+试试点击右侧演示按钮，或输入消息开始交互。</div>
+                        </div>
+                    </div>
+                    <div class="fs-input-row">
+                        <input class="fs-input" id="msgInput" placeholder="输入消息（如：帮我生成财务报告）" onkeydown="if(event.key==='Enter')FS.sendMessage()">
+                        <button class="fs-btn fs-btn-primary" onclick="FS.sendMessage()">发送</button>
+                    </div>
+                    <div class="fs-quick-btns">
+                        <button class="fs-quick-btn" onclick="FS.quickSend('帮我查一下财务数据')">📊 查财务</button>
+                        <button class="fs-quick-btn" onclick="FS.quickSend('帮我生成财务报告')">📋 生成报告</button>
+                        <button class="fs-quick-btn" onclick="FS.quickSend('查一下HR数据')">👥 查HR</button>
+                        <button class="fs-quick-btn" onclick="FS.quickSend('帮我创建文档')">📄 创建文档</button>
+                    </div>
+                </div>
+
+                <div class="fs-card">
+                    <h3 style="color:#fbbf24">🎬 演示按钮</h3>
+                    <div class="fs-demo-grid">
+                        <div class="fs-demo-card dc-normal" onclick="FS.quickSend('帮我生成财务报告')">
+                            <div class="dc-icon">✅</div>
+                            <div class="dc-title" style="color:#34d399">生成报告</div>
+                            <div class="dc-desc">正常流程 · IAM 全链路通过</div>
+                        </div>
+                        <div class="fs-demo-card dc-escalation" onclick="FS.quickSend('读取薪资数据')">
+                            <div class="dc-icon">❌</div>
+                            <div class="dc-title" style="color:#f87171">读取薪资</div>
+                            <div class="dc-desc">越权攻击 · Capability Deny</div>
+                        </div>
+                        <div class="fs-demo-card dc-replay" onclick="FS.quickSend('重复请求')">
+                            <div class="dc-icon">🔁</div>
+                            <div class="dc-title" style="color:#fbbf24">重复请求</div>
+                            <div class="dc-desc">Replay Attack · Token 重放</div>
+                        </div>
+                        <div class="fs-demo-card dc-autorevoke" onclick="FS.quickSend('连续测试')">
+                            <div class="dc-icon">🔥</div>
+                            <div class="dc-title" style="color:#ef4444">连续攻击</div>
+                            <div class="dc-desc">Auto-Revoke · 自动封禁</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="fs-card">
+                    <h3 style="color:#c4b5fd">🔐 安全链路追踪</h3>
+                    <div id="chainView" style="color:rgba(255,255,255,0.25);text-align:center;padding:20px;font-size:0.82rem">
+                        发送消息后查看安全链路
+                    </div>
+                </div>
+
+                <div class="fs-card">
+                    <h3 style="color:#34d399">🏆 信任评分</h3>
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+                        <div style="font-size:2rem;font-weight:800" id="trustDisplay">0.92</div>
+                        <div style="flex:1">
+                            <div class="fs-trust-bar">
+                                <div class="fs-trust-fill" id="trustBar" style="width:92%;background:#34d399"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.6rem;color:rgba(255,255,255,0.25)">
+                        <span style="color:#34d399">● SAFE ≥0.7</span> &nbsp;
+                        <span style="color:#fbbf24">● WARN 0.5-0.7</span> &nbsp;
+                        <span style="color:#ef4444">● DANGER &lt;0.5</span> &nbsp;
+                        <span style="color:#ef4444">🔥 REVOKED &lt;0.3</span>
+                    </div>
+                </div>
+
+                <div class="fs-card">
+                    <h3 style="color:#f87171">📡 飞书事件流</h3>
+                    <div id="eventStream" style="max-height:280px;overflow-y:auto">
+                        <div style="color:rgba(255,255,255,0.2);text-align:center;padding:16px;font-size:0.82rem">等待事件...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/mode.js?v=1.0"></script><script src="/static/iam-explain.js?v=1.2"></script>
+    <script src="/static/feishu.js?v=2.3"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+{
+  "passed": 12,
+  "total": 12,
+  "all_passed": true,
+  "details": [
+    {
+      "name": "No token → 401/403",
+      "passed": true,
+      "detail": "status=401"
+    },
+    {
+      "name": "No token → admin endpoint blocked",
+      "passed": true,
+      "detail": "status=401"
+    },
+    {
+      "name": "Fake token 'eyJhbGciOiJIUzI1NiIs...' → rejected",
+      "passed": true,
+      "detail": "status=401"
+    },
+    {
+      "name": "Fake token 'forged_token_12345...' → rejected",
+      "passed": true,
+      "detail": "status=401"
+    },
+    {
+      "name": "Fake token 'sk_agent_completely_...' → rejected",
+      "passed": true,
+      "detail": "status=401"
+    },
+    {
+      "name": "Valid token → /me works",
+      "passed": true,
+      "detail": "agent_id=agent_75b3d448, token obtained"
+    },
+    {
+      "name": "basic role → admin endpoint denied",
+      "passed": true,
+      "detail": "status=403"
+    },
+    {
+      "name": "basic role → create admin agent denied",
+      "passed": true,
+      "detail": "status=403"
+    },
+    {
+      "name": "external_agent → admin data DENIED",
+      "passed": true,
+      "detail": "status=403"
+    },
+    {
+      "name": "external_agent → finance data restricted",
+      "passed": true,
+      "detail": "status=200, checked by IAM"
+    },
+    {
+      "name": "Revoked token → rejected",
+      "passed": true,
+      "detail": "status=401"
+    },
+    {
+      "name": "Tampered chain (MITM) → signature mismatch → rejected",
+      "passed": true,
+      "detail": "status=401 (tampered sub=admin, chain=[user,admin,data_agent])"
+    }
+  ]
+}

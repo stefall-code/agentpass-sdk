@@ -1,0 +1,292 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Center - AgentPass v2.5</title>
+    <link rel="stylesheet" href="/static/styles.css?v=3.2">
+    <style>
+        html[data-theme="dark"] {
+            --bg: #000000; --bg-alt: #1c1c1e; --bg-elevated: #1c1c1e;
+            --bg-glass: rgba(28,28,30,0.72); --text: #f5f5f7;
+            --text-secondary: #98989d; --text-tertiary: #636366;
+            --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14);
+            --nav-height: 52px;
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "Segoe UI", "Noto Sans SC", sans-serif;
+            --blue: #0071e3; --blue-light: rgba(0,113,227,0.15); --blue-lighter: rgba(0,113,227,0.08);
+            --gray6: #2c2c2e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; background: var(--bg-alt, #1c1c1e); color: var(--text, #f5f5f7); font-family: var(--font, sans-serif); }
+
+        .ac-main { max-width: 1400px; margin: 0 auto; padding: calc(var(--nav-height, 52px) + 20px) 20px 40px; }
+
+        .ac-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .ac-stat {
+            background: rgba(255,255,255,0.04); border-radius: 12px; padding: 14px 16px;
+            border: 1px solid rgba(255,255,255,0.07); text-align: center;
+        }
+        .ac-stat .val { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .ac-stat .lbl { font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+        .ac-card {
+            background: rgba(255,255,255,0.04); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+            padding: 20px; margin-bottom: 16px;
+        }
+        .ac-card h2 { font-size: 0.95rem; margin-bottom: 14px; color: #fbbf24; letter-spacing: -0.01em; }
+
+        .ac-exec-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+        .ac-exec-field { display: flex; flex-direction: column; gap: 4px; }
+        .ac-exec-field label { font-size: 0.7rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.04em; }
+        .ac-exec-input {
+            padding: 8px 12px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);
+            color: #e0e0e0; font-size: 0.85rem; outline: none; min-width: 140px;
+        }
+        .ac-exec-input:focus { border-color: #fbbf24; }
+        .ac-exec-btn {
+            padding: 8px 20px; border-radius: 8px; border: none;
+            background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .ac-exec-btn:hover { opacity: 0.85; }
+        .ac-exec-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .ac-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .ac-filter-input {
+            padding: 7px 12px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);
+            color: #e0e0e0; font-size: 0.8rem; outline: none;
+        }
+        .ac-filter-input:focus { border-color: #fbbf24; }
+        .ac-btn {
+            padding: 7px 14px; border-radius: 8px; border: none;
+            font-size: 0.8rem; cursor: pointer; font-weight: 500; transition: all 0.2s;
+        }
+        .ac-btn-primary { background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; }
+        .ac-btn-primary:hover { opacity: 0.85; }
+        .ac-btn-ghost { background: rgba(255,255,255,0.08); color: #fbbf24; border: 1px solid rgba(255,255,255,0.12); }
+        .ac-btn-ghost:hover { background: rgba(255,255,255,0.14); }
+
+        .ac-table-wrap { overflow-x: auto; margin-top: 12px; }
+        .ac-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+        .ac-table th {
+            text-align: left; padding: 10px 10px; color: rgba(255,255,255,0.4);
+            font-weight: 600; font-size: 0.68rem; text-transform: uppercase;
+            letter-spacing: 0.06em; border-bottom: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+        .ac-table td {
+            padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: middle;
+        }
+        .ac-table tbody tr { transition: background 0.15s; }
+        .ac-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+        .ac-table tbody tr.new-row { animation: rowFlash 1.5s ease; }
+        @keyframes rowFlash {
+            0% { background: rgba(251,191,36,0.15); }
+            100% { background: transparent; }
+        }
+
+        .ac-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .ac-badge-allow { background: rgba(52,211,153,0.15); color: #34d399; }
+        .ac-badge-deny { background: rgba(248,113,113,0.15); color: #f87171; }
+        .ac-badge-revoke { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .ac-risk-high { color: #ef4444 !important; font-weight: 700; }
+        .ac-risk-med { color: #fbbf24; }
+        .ac-risk-low { color: #34d399; }
+
+        .ac-trust-delta {
+            display: inline-flex; align-items: center; gap: 2px;
+            font-size: 0.7rem; font-weight: 600;
+        }
+        .ac-trust-delta.down { color: #ef4444; animation: trustFlash 1s ease; }
+        .ac-trust-delta.up { color: #34d399; }
+        @keyframes trustFlash {
+            0%, 50% { opacity: 1; text-shadow: 0 0 8px rgba(239,68,68,0.6); }
+            25%, 75% { opacity: 0.5; }
+            100% { opacity: 1; text-shadow: none; }
+        }
+
+        .ac-expand-btn {
+            cursor: pointer; color: rgba(255,255,255,0.4); font-size: 0.7rem;
+            border: none; background: none; text-decoration: underline; transition: color 0.2s;
+        }
+        .ac-expand-btn:hover { color: #fbbf24; }
+
+        .ac-detail-row { display: none; }
+        .ac-detail-row.open { display: table-row; }
+        .ac-detail-content {
+            background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px;
+            font-size: 0.75rem; line-height: 1.7;
+        }
+        .ac-detail-section { margin-bottom: 10px; }
+        .ac-detail-section:last-child { margin-bottom: 0; }
+        .ac-detail-label {
+            font-size: 0.65rem; color: rgba(255,255,255,0.35); text-transform: uppercase;
+            letter-spacing: 0.06em; margin-bottom: 3px;
+        }
+        .ac-detail-value {
+            color: rgba(255,255,255,0.7); font-family: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, "Courier New", monospace;
+            font-size: 0.72rem; word-break: break-all;
+        }
+        .ac-trace-pipeline { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+        .ac-trace-step {
+            padding: 4px 10px; border-radius: 6px; font-size: 0.68rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
+        }
+        .ac-trace-step.pass { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.08); color: #34d399; }
+        .ac-trace-step.fail { border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); color: #f87171; }
+
+        .ac-live-dot {
+            width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+            margin-right: 5px; vertical-align: middle;
+        }
+        .ac-live-dot.on { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.5); animation: livePulse 2s ease-in-out infinite; }
+        .ac-live-dot.off { background: #f87171; }
+        @keyframes livePulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+        .ac-event-stream {
+            max-height: 160px; overflow-y: auto; font-family: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, "Courier New", monospace;
+            font-size: 0.72rem; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;
+        }
+        .ac-ev-item {
+            padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+            display: flex; gap: 6px; align-items: center; animation: evSlide 0.25s ease;
+        }
+        @keyframes evSlide { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+        .ac-ev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .ac-ev-dot.allow { background: #34d399; }
+        .ac-ev-dot.deny { background: #f87171; }
+        .ac-ev-dot.revoke { background: #ef4444; }
+        .ac-ev-time { color: rgba(255,255,255,0.3); font-size: 0.65rem; flex-shrink: 0; min-width: 60px; }
+        .ac-ev-agent { color: #c4b5fd; font-weight: 600; }
+        .ac-ev-action { color: rgba(255,255,255,0.6); }
+
+        .ac-empty { color: rgba(255,255,255,0.3); text-align: center; padding: 30px; font-size: 0.85rem; }
+
+        .ac-integrity-ok { color: #34d399; font-size: 1.3rem; }
+        .ac-integrity-fail { color: #ef4444; font-size: 1.3rem; }
+
+        .ac-result-panel {
+            margin-top: 12px; padding: 14px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1); display: none;
+        }
+        .ac-result-panel.allowed { background: rgba(52,211,153,0.06); border-color: rgba(52,211,153,0.2); }
+        .ac-result-panel.denied { background: rgba(248,113,113,0.06); border-color: rgba(248,113,113,0.2); }
+
+        @media (max-width: 768px) {
+            .ac-exec-row { flex-direction: column; }
+            .ac-exec-input { min-width: 100%; }
+            .ac-stats { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="/">
+          <span class="nav-title">📋 Audit Center</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Console</a>
+          <a href="/audit" class="active">Audit</a>
+          <a href="/chain">Chain</a>
+          <a href="/trust">Trust</a>
+          <a href="/risk">Risk</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="ac-main">
+        <div class="ac-stats" id="auditStats">
+            <div class="ac-stat"><div class="val" id="statTotal" style="color:#fbbf24">0</div><div class="lbl">Total Events</div></div>
+            <div class="ac-stat"><div class="val" id="statAllow" style="color:#34d399">0</div><div class="lbl">Allow</div></div>
+            <div class="ac-stat"><div class="val" id="statDeny" style="color:#f87171">0</div><div class="lbl">Deny</div></div>
+            <div class="ac-stat"><div class="val" id="statRevoke" style="color:#ef4444">0</div><div class="lbl">Auto-Revoke</div></div>
+            <div class="ac-stat"><div class="val" id="statHighRisk" style="color:#ef4444">0</div><div class="lbl">High Risk</div></div>
+            <div class="ac-stat"><div class="val" id="statIntegrity" style="color:#34d399">—</div><div class="lbl">Hash Chain</div></div>
+        </div>
+
+        <div class="ac-card">
+            <h2>⚡ 执行操作（触发授权检查）</h2>
+            <div class="ac-exec-row">
+                <div class="ac-exec-field">
+                    <label>Agent ID</label>
+                    <select class="ac-exec-input" id="execAgent">
+                        <option value="doc_agent">doc_agent</option>
+                        <option value="data_agent">data_agent</option>
+                        <option value="external_agent">external_agent</option>
+                    </select>
+                </div>
+                <div class="ac-exec-field">
+                    <label>Action</label>
+                    <input class="ac-exec-input" id="execAction" value="read:feishu_table:finance" style="min-width:200px">
+                </div>
+                <div class="ac-exec-field">
+                    <label>Delegated User</label>
+                    <input class="ac-exec-input" id="execUser" value="user_1" style="min-width:120px">
+                </div>
+                <button class="ac-exec-btn" id="execBtn" onclick="executeAction()">⚡ 执行操作</button>
+            </div>
+            <div class="ac-result-panel" id="execResult"></div>
+        </div>
+
+        <div class="ac-card">
+            <h2>📡 实时事件流 <span id="wsStatus"><span class="ac-live-dot off"></span>未连接</span></h2>
+            <div class="ac-event-stream" id="liveStream">
+                <div class="ac-empty">等待连接...</div>
+            </div>
+        </div>
+
+        <div class="ac-card">
+            <h2>🔍 审计日志</h2>
+            <div class="ac-filters">
+                <input class="ac-filter-input" id="filterAgent" placeholder="Agent ID">
+                <select class="ac-filter-input" id="filterResult">
+                    <option value="">全部结果</option>
+                    <option value="allow">ALLOW</option>
+                    <option value="deny">DENY</option>
+                </select>
+                <input class="ac-filter-input" id="filterAction" placeholder="Action">
+                <input class="ac-filter-input" id="filterLimit" type="number" value="100" min="1" max="500" style="width:70px">
+                <button class="ac-btn ac-btn-primary" onclick="loadAuditLogs()">查询</button>
+                <button class="ac-btn ac-btn-ghost" onclick="verifyIntegrity()">🔗 验证完整性</button>
+                <button class="ac-btn ac-btn-ghost" onclick="exportAudit()">📥 导出</button>
+            </div>
+            <div class="ac-table-wrap">
+                <table class="ac-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Agent</th>
+                            <th>Action</th>
+                            <th>Result</th>
+                            <th>Reason</th>
+                            <th>Risk</th>
+                            <th>Trust Δ</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                        <tr><td colspan="8" class="ac-empty">点击"查询"加载审计日志</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="ac-card" id="integrityCard" style="display:none">
+            <h2>🔗 哈希链完整性验证</h2>
+            <div id="integrityResult"></div>
+        </div>
+    </div>
+    <script src="/static/mode.js?v=1.0"></script><script src="/static/iam-explain.js?v=1.2"></script>
+    <script src="/static/audit.js?v=3.4"></script>
+</body>
+</html>

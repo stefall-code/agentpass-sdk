@@ -1,0 +1,367 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trust Energy Field - AgentPass v2.5</title>
+    <link rel="stylesheet" href="/static/styles.css?v=3.2">
+    <style>
+        html[data-theme="dark"] {
+            --bg: #000000; --bg-alt: #1c1c1e; --bg-elevated: #1c1c1e;
+            --bg-glass: rgba(28,28,30,0.72); --text: #f5f5f7;
+            --text-secondary: #98989d; --text-tertiary: #636366;
+            --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14);
+            --nav-height: 52px;
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "Segoe UI", "Noto Sans SC", sans-serif;
+            --mono: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+            --blue: #0071e3; --blue-light: rgba(0,113,227,0.15);
+            --gray6: #2c2c2e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; background: #020408; color: #f5f5f7; font-family: var(--font, sans-serif); }
+
+        .te-main { padding: calc(var(--nav-height, 52px) + 12px) 20px 40px; }
+
+        .te-top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; margin-bottom: 16px;
+            background: rgba(255,255,255,0.03); border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .te-top-stats { display: flex; gap: 24px; align-items: center; }
+        .te-top-stat { text-align: center; }
+        .te-top-stat .val { font-size: 1.4rem; font-weight: 800; }
+        .te-top-stat .lbl { font-size: 0.5rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; }
+        .te-top-actions { display: flex; gap: 8px; }
+
+        .te-btn {
+            padding: 8px 16px; border-radius: 8px; border: none;
+            font-size: 0.78rem; cursor: pointer; font-weight: 600; transition: all 0.2s;
+        }
+        .te-btn-danger { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+        .te-btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .te-btn-warn { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+        .te-btn-warn:hover { background: rgba(251,191,36,0.2); }
+        .te-btn-ghost { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.08); }
+        .te-btn-ghost:hover { background: rgba(255,255,255,0.08); }
+
+        .te-layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+        @media (max-width: 960px) { .te-layout { grid-template-columns: 1fr; } }
+
+        .te-field {
+            position: relative; min-height: 600px;
+            background: radial-gradient(ellipse at 50% 50%, #0a1628 0%, #050a14 50%, #020408 100%);
+            border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+            overflow: hidden;
+        }
+        .te-field canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+        .te-field-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10;
+            display: flex; flex-direction: column; pointer-events: none;
+        }
+        .te-field-overlay > * { pointer-events: auto; }
+
+        .te-field-header {
+            padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .te-field-title { font-size: 0.7rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; }
+
+        .te-field-center { flex: 1; position: relative; display: grid; place-items: center; }
+
+        .te-field-footer {
+            padding: 10px 20px; background: rgba(0,0,0,0.4);
+            border-top: 1px solid rgba(255,255,255,0.04);
+            display: flex; justify-content: center; gap: 24px; font-size: 0.6rem; color: rgba(255,255,255,0.25);
+        }
+        .te-field-footer span { display: flex; align-items: center; gap: 5px; }
+        .te-field-footer .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+        .te-energy-node {
+            position: absolute; cursor: pointer; transition: all 0.4s ease;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .te-energy-node:hover { transform: scale(1.08); }
+        .te-energy-node.selected { transform: scale(1.12); }
+
+        .te-node-core {
+            width: 80px; height: 80px; border-radius: 50%; position: relative;
+            display: grid; place-items: center; font-size: 2rem;
+            transition: all 0.5s ease;
+        }
+        .te-node-core.safe {
+            background: radial-gradient(circle, rgba(52,211,153,0.2) 0%, rgba(52,211,153,0.05) 60%, transparent 100%);
+            border: 2px solid rgba(52,211,153,0.4);
+            box-shadow: 0 0 30px rgba(52,211,153,0.15), 0 0 60px rgba(52,211,153,0.08), inset 0 0 20px rgba(52,211,153,0.1);
+        }
+        .te-node-core.warning {
+            background: radial-gradient(circle, rgba(251,191,36,0.2) 0%, rgba(251,191,36,0.05) 60%, transparent 100%);
+            border: 2px solid rgba(251,191,36,0.4);
+            box-shadow: 0 0 30px rgba(251,191,36,0.15), 0 0 60px rgba(251,191,36,0.08), inset 0 0 20px rgba(251,191,36,0.1);
+            animation: warningPulse 2s ease-in-out infinite;
+        }
+        .te-node-core.danger {
+            background: radial-gradient(circle, rgba(248,113,113,0.2) 0%, rgba(248,113,113,0.05) 60%, transparent 100%);
+            border: 2px solid rgba(248,113,113,0.5);
+            box-shadow: 0 0 30px rgba(248,113,113,0.2), 0 0 60px rgba(248,113,113,0.1), inset 0 0 20px rgba(248,113,113,0.15);
+            animation: dangerFlicker 0.8s ease-in-out infinite;
+        }
+        .te-node-core.revoked {
+            background: radial-gradient(circle, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.02) 60%, transparent 100%);
+            border: 2px solid rgba(239,68,68,0.3);
+            box-shadow: 0 0 10px rgba(239,68,68,0.1);
+            animation: revokeCollapse 1.5s ease-in-out infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(251,191,36,0.15), 0 0 60px rgba(251,191,36,0.08); }
+            50% { box-shadow: 0 0 40px rgba(251,191,36,0.25), 0 0 80px rgba(251,191,36,0.12); }
+        }
+        @keyframes dangerFlicker {
+            0%, 100% { opacity: 1; box-shadow: 0 0 30px rgba(248,113,113,0.2), 0 0 60px rgba(248,113,113,0.1); }
+            25% { opacity: 0.7; }
+            50% { opacity: 1; box-shadow: 0 0 50px rgba(248,113,113,0.35), 0 0 100px rgba(248,113,113,0.15); }
+            75% { opacity: 0.6; }
+        }
+        @keyframes revokeCollapse {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(0.92); opacity: 0.2; }
+        }
+
+        .te-node-ring {
+            position: absolute; top: -8px; left: -8px; right: -8px; bottom: -8px;
+            border-radius: 50%; border: 1px solid transparent;
+            animation: ringExpand 3s ease-in-out infinite;
+        }
+        .te-node-ring.safe { border-color: rgba(52,211,153,0.15); }
+        .te-node-ring.warning { border-color: rgba(251,191,36,0.15); animation-duration: 1.5s; }
+        .te-node-ring.danger { border-color: rgba(248,113,113,0.2); animation-duration: 0.6s; }
+        .te-node-ring.revoked { display: none; }
+
+        @keyframes ringExpand {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.3; }
+        }
+
+        .te-node-ring2 {
+            position: absolute; top: -16px; left: -16px; right: -16px; bottom: -16px;
+            border-radius: 50%; border: 1px solid transparent;
+            animation: ringExpand2 4s ease-in-out infinite;
+        }
+        .te-node-ring2.safe { border-color: rgba(52,211,153,0.08); }
+        .te-node-ring2.warning { border-color: rgba(251,191,36,0.08); animation-duration: 2s; }
+        .te-node-ring2.danger { border-color: rgba(248,113,113,0.1); animation-duration: 0.8s; }
+        .te-node-ring2.revoked { display: none; }
+
+        @keyframes ringExpand2 {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.2; }
+        }
+
+        .te-node-label {
+            margin-top: 8px; font-size: 0.72rem; font-weight: 700;
+            color: rgba(255,255,255,0.6); text-align: center; letter-spacing: 0.02em;
+        }
+        .te-node-score {
+            font-size: 0.85rem; font-weight: 800; margin-top: 2px; text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .te-node-status {
+            font-size: 0.55rem; margin-top: 2px; text-align: center;
+            letter-spacing: 0.06em; font-weight: 600;
+        }
+
+        .te-right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+        .te-detail-card {
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+            padding: 20px; position: sticky; top: 72px;
+        }
+        .te-detail-card h3 { font-size: 0.9rem; color: #34d399; margin-bottom: 14px; }
+
+        .te-detail-empty { color: rgba(255,255,255,0.25); text-align: center; padding: 30px; font-size: 0.85rem; }
+
+        .te-detail-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.78rem;
+        }
+        .te-detail-row:last-child { border-bottom: none; }
+        .te-detail-key { color: rgba(255,255,255,0.35); }
+        .te-detail-val { color: rgba(255,255,255,0.8); font-weight: 500; text-align: right; max-width: 220px; word-break: break-all; }
+
+        .te-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .te-badge-safe { background: rgba(52,211,153,0.15); color: #34d399; }
+        .te-badge-warning { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .te-badge-danger { background: rgba(248,113,113,0.15); color: #f87171; }
+        .te-badge-revoked { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .te-trust-history {
+            margin-top: 14px; padding: 14px; border-radius: 10px;
+            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.04);
+        }
+        .te-trust-history h4 { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .te-history-canvas { width: 100%; height: 80px; display: block; }
+
+        .te-recent-actions {
+            margin-top: 14px; padding: 14px; border-radius: 10px;
+            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.04);
+            max-height: 180px; overflow-y: auto;
+        }
+        .te-recent-actions h4 { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .te-action-item {
+            padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.7rem; display: flex; gap: 6px; align-items: center;
+        }
+        .te-action-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+        .te-action-dot.allow { background: #34d399; }
+        .te-action-dot.deny { background: #f87171; }
+        .te-action-dot.revoke { background: #ef4444; }
+        .te-action-text { color: rgba(255,255,255,0.5); flex: 1; }
+
+        .te-risk-reasons {
+            margin-top: 14px; padding: 14px; border-radius: 10px;
+            background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.15);
+            display: none;
+        }
+        .te-risk-reasons.show { display: block; animation: teSlideIn 0.3s ease; }
+        @keyframes teSlideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+        .te-risk-reasons h4 { font-size: 0.72rem; color: #ef4444; margin-bottom: 8px; }
+        .te-risk-item {
+            padding: 6px 10px; border-radius: 6px; margin-bottom: 4px;
+            font-size: 0.7rem; background: rgba(239,68,68,0.06); color: rgba(255,255,255,0.5);
+            border-left: 3px solid #ef4444;
+        }
+
+        .te-demo-card {
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+            padding: 20px;
+        }
+        .te-demo-card h3 { font-size: 0.9rem; color: #fbbf24; margin-bottom: 14px; }
+        .te-demo-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .te-demo-log {
+            margin-top: 12px; max-height: 200px; overflow-y: auto;
+            background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;
+            font-family: var(--mono); font-size: 0.68rem;
+        }
+        .te-demo-step {
+            padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+            display: flex; gap: 6px; align-items: center;
+        }
+        .te-demo-step .num { color: rgba(255,255,255,0.2); min-width: 20px; }
+        .te-demo-step .action { color: #c4b5fd; flex: 1; }
+        .te-demo-step .badge { font-size: 0.58rem; padding: 1px 8px; border-radius: 10px; font-weight: 600; }
+        .te-demo-step .badge.allow { background: rgba(52,211,153,0.15); color: #34d399; }
+        .te-demo-step .badge.deny { background: rgba(248,113,113,0.15); color: #f87171; }
+        .te-demo-step .badge.revoke { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .te-insight-box {
+            margin-top: 12px; padding: 12px; border-radius: 10px;
+            font-size: 0.82rem; line-height: 1.6;
+        }
+        .te-insight-box.green { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.2); }
+        .te-insight-box.red { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); }
+        .te-insight-box.yellow { background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2); }
+        .te-insight-title { font-weight: 700; margin-bottom: 4px; }
+        .te-insight-title.green { color: #34d399; }
+        .te-insight-title.red { color: #ef4444; }
+        .te-insight-title.yellow { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="/">
+          <span class="nav-title">🏆 Trust Energy Field</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Console</a>
+          <a href="/audit">Audit</a>
+          <a href="/chain">Chain</a>
+          <a href="/trust" class="active">Trust</a>
+          <a href="/risk">Risk</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="te-main">
+        <div class="te-top-bar">
+            <div class="te-top-stats">
+                <div class="te-top-stat"><div class="val" style="color:#f5f5f7" id="statAgents">0</div><div class="lbl">Agents</div></div>
+                <div class="te-top-stat"><div class="val" style="color:#34d399" id="statSafe">0</div><div class="lbl">🟢 Safe</div></div>
+                <div class="te-top-stat"><div class="val" style="color:#fbbf24" id="statWarning">0</div><div class="lbl">🟡 Warning</div></div>
+                <div class="te-top-stat"><div class="val" style="color:#f87171" id="statDanger">0</div><div class="lbl">🔴 Danger</div></div>
+                <div class="te-top-stat"><div class="val" style="color:#ef4444" id="statRevoked">0</div><div class="lbl">🔥 Revoked</div></div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,0.06)"></div>
+                <div class="te-top-stat"><div class="val" style="color:#fbbf24;font-size:1rem" id="trustThreshold">—</div><div class="lbl">Trust Threshold</div></div>
+                <div class="te-top-stat"><div class="val" style="color:#ef4444;font-size:1rem" id="autoRevokeThreshold">—</div><div class="lbl">Auto-Revoke</div></div>
+            </div>
+            <div class="te-top-actions">
+                <button class="te-btn te-btn-ghost" onclick="TE.refresh()">🔄 刷新</button>
+                <button class="te-btn te-btn-danger" onclick="TE.resetTrust()">重置信任分</button>
+            </div>
+        </div>
+
+        <div class="te-layout">
+            <div>
+                <div class="te-field" id="energyField">
+                    <canvas id="fieldCanvas"></canvas>
+                    <div class="te-field-overlay">
+                        <div class="te-field-header">
+                            <div class="te-field-title">⚡ Agent Energy Field</div>
+                            <div style="font-size:0.6rem;color:rgba(255,255,255,0.2)">Trust = Energy · Revoked = Collapsed</div>
+                        </div>
+                        <div class="te-field-center" id="energyNodes"></div>
+                        <div class="te-field-footer">
+                            <span><span class="dot" style="background:#34d399"></span> 0.7~1.0 Stable</span>
+                            <span><span class="dot" style="background:#fbbf24"></span> 0.5~0.7 Fluctuating</span>
+                            <span><span class="dot" style="background:#f87171"></span> 0.3~0.5 Unstable</span>
+                            <span><span class="dot" style="background:#ef4444"></span> &lt;0.3 Collapsed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="te-right-panel">
+                <div class="te-detail-card" id="detailPanel">
+                    <h3>🔍 Agent Detail</h3>
+                    <div id="detailContent">
+                        <div class="te-detail-empty">点击能量体查看详情</div>
+                    </div>
+                    <div class="te-trust-history" id="historySection" style="display:none">
+                        <h4>📈 Trust History</h4>
+                        <canvas class="te-history-canvas" id="historyCanvas"></canvas>
+                    </div>
+                    <div class="te-recent-actions" id="actionsSection" style="display:none">
+                        <h4>📋 Recent Actions</h4>
+                        <div id="actionsList"></div>
+                    </div>
+                    <div class="te-risk-reasons" id="riskSection">
+                        <h4>⚠️ Risk Factors</h4>
+                        <div id="riskReasons"></div>
+                    </div>
+                </div>
+
+                <div class="te-demo-card">
+                    <h3>🎬 场景演示</h3>
+                    <div class="te-demo-btns">
+                        <button class="te-btn te-btn-warn" onclick="TE.demoDegrade()">📉 信任降级</button>
+                        <button class="te-btn te-btn-danger" onclick="TE.demoAutoRevoke()">🔥 自动撤销</button>
+                    </div>
+                    <div id="demoLog"></div>
+                    <div id="demoInsight"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/mode.js?v=1.0"></script><script src="/static/iam-explain.js?v=1.2"></script>
+    <script src="/static/trust.js?v=6.1"></script>
+</body>
+</html>

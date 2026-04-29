@@ -1,0 +1,152 @@
+@baseUrl = http://127.0.0.1:8000
+@adminAgentId = agent_admin_demo
+@adminApiKey = admin-demo-key
+@operatorAgentId = agent_operator_demo
+@operatorApiKey = operator-demo-key
+@editorAgentId = agent_editor_demo
+@editorApiKey = editor-demo-key
+@basicAgentId = agent_basic_demo
+@basicApiKey = basic-demo-key
+
+### Health check
+GET {{baseUrl}}/healthz
+
+### Root overview
+GET {{baseUrl}}/api/overview
+
+### Login as admin
+# @name adminLogin
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "agent_id": "{{adminAgentId}}",
+  "api_key": "{{adminApiKey}}"
+}
+
+### Login as operator
+# @name operatorLogin
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "agent_id": "{{operatorAgentId}}",
+  "api_key": "{{operatorApiKey}}"
+}
+
+### Login as editor
+# @name editorLogin
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "agent_id": "{{editorAgentId}}",
+  "api_key": "{{editorApiKey}}"
+}
+
+### Login as basic
+# @name basicLogin
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "agent_id": "{{basicAgentId}}",
+  "api_key": "{{basicApiKey}}"
+}
+
+### Inspect current admin agent
+GET {{baseUrl}}/me
+Authorization: Bearer {{adminLogin.response.body.access_token}}
+
+### Introspect current admin token
+GET {{baseUrl}}/auth/introspect
+Authorization: Bearer {{adminLogin.response.body.access_token}}
+
+### Basic agent reads public document
+GET {{baseUrl}}/resource/docs/public_brief
+Authorization: Bearer {{basicLogin.response.body.access_token}}
+
+### Basic agent tries to read confidential document (should fail)
+GET {{baseUrl}}/resource/docs/admin_playbook
+Authorization: Bearer {{basicLogin.response.body.access_token}}
+
+### Editor writes a new internal document
+PUT {{baseUrl}}/resource/docs/daily_report
+Authorization: Bearer {{editorLogin.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "content": "Daily report generated from VS Code REST Client.",
+  "sensitivity": "internal"
+}
+
+### Operator executes a task
+POST {{baseUrl}}/tasks/execute
+Authorization: Bearer {{operatorLogin.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "task_name": "summarize_logs",
+  "resource": "sandbox",
+  "parameters": {
+    "limit": 10
+  }
+}
+
+### Operator calls an integration
+POST {{baseUrl}}/integrations/call
+Authorization: Bearer {{operatorLogin.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "service_name": "knowledge_base",
+  "payload": {
+    "query": "agent security"
+  }
+}
+
+### Operator delegates to editor
+POST {{baseUrl}}/agents/delegate
+Authorization: Bearer {{operatorLogin.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "target_agent_id": "agent_operator_peer_demo",
+  "task_name": "prepare_report",
+  "resource": "sandbox"
+}
+
+### Operator delegates to editor (should fail)
+POST {{baseUrl}}/agents/delegate
+Authorization: Bearer {{operatorLogin.response.body.access_token}}
+Content-Type: application/json
+
+{
+  "target_agent_id": "agent_editor_demo",
+  "task_name": "prepare_report",
+  "resource": "sandbox"
+}
+
+### Admin lists all agents
+GET {{baseUrl}}/admin/agents
+Authorization: Bearer {{adminLogin.response.body.access_token}}
+
+### Admin dashboard
+GET {{baseUrl}}/admin/dashboard
+Authorization: Bearer {{adminLogin.response.body.access_token}}
+
+### Admin reads audit logs
+GET {{baseUrl}}/audit/logs?limit=20
+Authorization: Bearer {{adminLogin.response.body.access_token}}
+
+### Filtered audit logs
+GET {{baseUrl}}/audit/logs?limit=20&decision=deny
+Authorization: Bearer {{adminLogin.response.body.access_token}}
+
+### Revoke current admin token
+POST {{baseUrl}}/auth/revoke
+Authorization: Bearer {{adminLogin.response.body.access_token}}
+
+### Reset demo state
+POST {{baseUrl}}/admin/demo/reset
+Authorization: Bearer {{adminLogin.response.body.access_token}}

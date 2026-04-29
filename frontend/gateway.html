@@ -1,0 +1,297 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAM Gateway — Feishu Security Gateway</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        :root {
+            --gw-bg: #0a0a0f;
+            --gw-card: rgba(255,255,255,0.03);
+            --gw-border: rgba(255,255,255,0.06);
+            --gw-purple: #8b5cf6;
+            --gw-green: #34d399;
+            --gw-red: #ef4444;
+            --gw-yellow: #fbbf24;
+            --gw-cyan: #22d3ee;
+        }
+        body { background: var(--gw-bg); color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+        .gw-nav { display: flex; align-items: center; gap: 16px; padding: 16px 24px; border-bottom: 1px solid var(--gw-border); background: rgba(0,0,0,0.4); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
+        .gw-nav-logo { font-size: 1.1rem; font-weight: 800; background: linear-gradient(135deg, var(--gw-purple), var(--gw-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .gw-nav-badge { font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.2); color: var(--gw-cyan); font-weight: 600; }
+        .gw-nav-links { display: flex; gap: 8px; margin-left: auto; }
+        .gw-nav-links a { color: rgba(255,255,255,0.4); text-decoration: none; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; transition: all 0.2s; }
+        .gw-nav-links a:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
+
+        .gw-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        .gw-hero { text-align: center; padding: 40px 0 32px; }
+        .gw-hero h1 { font-size: 2rem; font-weight: 900; margin: 0 0 8px; background: linear-gradient(135deg, #fff, rgba(255,255,255,0.6)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .gw-hero p { color: rgba(255,255,255,0.35); font-size: 0.85rem; margin: 0; }
+        .gw-flow { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; font-size: 0.8rem; }
+        .gw-flow-node { padding: 8px 16px; border-radius: 8px; font-weight: 700; }
+        .gw-flow-arrow { color: rgba(255,255,255,0.2); font-size: 1.2rem; }
+
+        .gw-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .gw-stat { background: var(--gw-card); border: 1px solid var(--gw-border); border-radius: 12px; padding: 16px; text-align: center; }
+        .gw-stat-val { font-size: 1.6rem; font-weight: 900; margin-bottom: 4px; }
+        .gw-stat-label { font-size: 0.65rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .gw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        @media (max-width: 800px) { .gw-grid { grid-template-columns: 1fr; } }
+
+        .gw-card { background: var(--gw-card); border: 1px solid var(--gw-border); border-radius: 12px; overflow: hidden; }
+        .gw-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--gw-border); }
+        .gw-card-title { font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .gw-card-body { padding: 16px; }
+
+        .gw-check-form { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .gw-check-form input, .gw-check-form select { background: rgba(0,0,0,0.3); border: 1px solid var(--gw-border); border-radius: 8px; padding: 8px 12px; color: #e2e8f0; font-size: 0.8rem; outline: none; }
+        .gw-check-form input:focus, .gw-check-form select:focus { border-color: var(--gw-purple); }
+        .gw-check-form input { flex: 1; min-width: 120px; }
+        .gw-btn { padding: 8px 16px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+        .gw-btn-purple { background: var(--gw-purple); color: #fff; }
+        .gw-btn-purple:hover { background: #7c3aed; }
+        .gw-btn-red { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--gw-red); }
+        .gw-btn-red:hover { background: rgba(239,68,68,0.25); }
+        .gw-btn-cyan { background: rgba(34,211,238,0.15); border: 1px solid rgba(34,211,238,0.3); color: var(--gw-cyan); }
+        .gw-btn-cyan:hover { background: rgba(34,211,238,0.25); }
+
+        .gw-result { padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; display: none; }
+        .gw-result.allow { display: block; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); color: var(--gw-green); }
+        .gw-result.deny { display: block; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: var(--gw-red); }
+
+        .gw-audit-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+        .gw-audit-table th { text-align: left; padding: 8px 6px; color: rgba(255,255,255,0.3); font-weight: 600; border-bottom: 1px solid var(--gw-border); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .gw-audit-table td { padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.02); color: rgba(255,255,255,0.5); }
+        .gw-audit-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .gw-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; }
+        .gw-badge-allow { background: rgba(52,211,153,0.12); color: var(--gw-green); }
+        .gw-badge-deny { background: rgba(239,68,68,0.12); color: var(--gw-red); }
+        .gw-badge-error { background: rgba(251,191,36,0.12); color: var(--gw-yellow); }
+
+        .gw-demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .gw-demo-btn { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--gw-border); cursor: pointer; text-align: left; transition: all 0.2s; }
+        .gw-demo-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+        .gw-demo-btn-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 4px; }
+        .gw-demo-btn-desc { font-size: 0.65rem; color: rgba(255,255,255,0.3); }
+
+        .gw-demo-result { margin-top: 12px; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--gw-border); display: none; }
+        .gw-demo-result.show { display: block; }
+        .gw-demo-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.75rem; }
+        .gw-demo-row:last-child { border-bottom: none; }
+
+        .gw-map-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .gw-map-item { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 0.68rem; }
+        .gw-map-path { color: rgba(255,255,255,0.35); font-family: 'JetBrains Mono', monospace; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .gw-map-arrow { color: rgba(255,255,255,0.15); }
+        .gw-map-action { color: var(--gw-cyan); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+        .gw-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gw-green); display: inline-block; animation: gw-pulse 2s infinite; }
+        @keyframes gw-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+    <nav class="gw-nav">
+        <div class="gw-nav-logo">🛡️ IAM Gateway</div>
+        <div class="gw-nav-badge">SECURITY GATEWAY</div>
+        <div class="gw-nav-links">
+            <a href="/">Home</a>
+            <a href="/feishu">Feishu</a>
+            <a href="/governance">Governance</a>
+            <a href="/audit">Audit</a>
+        </div>
+    </nav>
+
+    <div class="gw-container">
+        <div class="gw-hero">
+            <h1>Feishu Security Gateway</h1>
+            <p>所有飞书 API 请求必须经过 IAM 授权 · 零绕过 · 全审计</p>
+            <div class="gw-flow">
+                <div class="gw-flow-node" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c4b5fd">Feishu CLI</div>
+                <div class="gw-flow-arrow">→</div>
+                <div class="gw-flow-node" style="background:rgba(34,211,238,0.15);border:1px solid rgba(34,211,238,0.3);color:#22d3ee">🛡️ IAM Gateway</div>
+                <div class="gw-flow-arrow">→</div>
+                <div class="gw-flow-node" style="background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);color:#34d399">✅ Allow</div>
+                <div class="gw-flow-arrow" style="color:rgba(239,68,68,0.4)">|</div>
+                <div class="gw-flow-node" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444">❌ Deny</div>
+            </div>
+        </div>
+
+        <div class="gw-stats" id="gwStats">
+            <div class="gw-stat"><div class="gw-stat-val" style="color:var(--gw-cyan)" id="statTotal">0</div><div class="gw-stat-label">Total Requests</div></div>
+            <div class="gw-stat"><div class="gw-stat-val" style="color:var(--gw-green)" id="statAllowed">0</div><div class="gw-stat-label">Allowed</div></div>
+            <div class="gw-stat"><div class="gw-stat-val" style="color:var(--gw-red)" id="statDenied">0</div><div class="gw-stat-label">Denied</div></div>
+            <div class="gw-stat"><div class="gw-stat-val" style="color:var(--gw-yellow)" id="statRevoked">0</div><div class="gw-stat-label">Auto-Revoked</div></div>
+            <div class="gw-stat"><div class="gw-stat-val" style="color:var(--gw-purple)" id="statLatency">0ms</div><div class="gw-stat-label">Avg Latency</div></div>
+            <div class="gw-stat"><div class="gw-stat-val" id="statDenyRate" style="color:var(--gw-red)">0%</div><div class="gw-stat-label">Deny Rate</div></div>
+        </div>
+
+        <div class="gw-grid">
+            <div class="gw-card">
+                <div class="gw-card-header">
+                    <div class="gw-card-title"><span class="gw-live-dot"></span> IAM Check</div>
+                </div>
+                <div class="gw-card-body">
+                    <div class="gw-check-form">
+                        <input type="text" id="checkAgent" placeholder="agent_id" value="doc_agent">
+                        <input type="text" id="checkAction" placeholder="action (e.g. write:doc)">
+                        <button class="gw-btn gw-btn-purple" onclick="doCheck()">Check</button>
+                    </div>
+                    <div class="gw-check-form">
+                        <input type="text" id="checkPath" placeholder="path (e.g. /docx/v1/documents)">
+                        <select id="checkMethod"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
+                        <button class="gw-btn gw-btn-cyan" onclick="doMapCheck()">Map & Check</button>
+                    </div>
+                    <div class="gw-result" id="checkResult"></div>
+                </div>
+            </div>
+
+            <div class="gw-card">
+                <div class="gw-card-header">
+                    <div class="gw-card-title">🗺️ Path → Action Mapping</div>
+                </div>
+                <div class="gw-card-body">
+                    <div class="gw-map-list">
+                        <div class="gw-map-item"><span class="gw-map-path">/im/v1/messages</span><span class="gw-map-arrow">→</span><span class="gw-map-action">write:feishu_message</span></div>
+                        <div class="gw-map-item"><span class="gw-map-path">/docx/v1/documents</span><span class="gw-map-arrow">→</span><span class="gw-map-action">write:doc</span></div>
+                        <div class="gw-map-item"><span class="gw-map-path">/sheets/v3/spreadsheets</span><span class="gw-map-arrow">→</span><span class="gw-map-action">write:sheet</span></div>
+                        <div class="gw-map-item"><span class="gw-map-path">/calendar/v4/calendars</span><span class="gw-map-arrow">→</span><span class="gw-map-action">write:calendar</span></div>
+                        <div class="gw-map-item"><span class="gw-map-path">/bitable/v1/apps</span><span class="gw-map-arrow">→</span><span class="gw-map-action">read:bitable</span></div>
+                        <div class="gw-map-item"><span class="gw-map-path">/drive/v1/files</span><span class="gw-map-arrow">→</span><span class="gw-map-action">read:drive</span></div>
+                        <div class="gw-map-item"><span class="gw-map-path">/wiki/v2/spaces</span><span class="gw-map-arrow">→</span><span class="gw-map-action">read:wiki</span></div>
+                        <div class="gw-map-item"><span class="gw-map-path">/contact/v3/users</span><span class="gw-map-arrow">→</span><span class="gw-map-action">read:contact</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="gw-card" style="margin-bottom:24px">
+            <div class="gw-card-header">
+                <div class="gw-card-title">🧪 Attack Demo</div>
+            </div>
+            <div class="gw-card-body">
+                <div class="gw-demo-grid">
+                    <div class="gw-demo-btn" onclick="runDemo('escalation')">
+                        <div class="gw-demo-btn-title" style="color:var(--gw-red)">🎯 Escalation Attack</div>
+                        <div class="gw-demo-btn-desc">external_agent 越权访问 finance 数据</div>
+                    </div>
+                    <div class="gw-demo-btn" onclick="runDemo('bypass')">
+                        <div class="gw-demo-btn-title" style="color:var(--gw-yellow)">🔓 Bypass Attempt</div>
+                        <div class="gw-demo-btn-desc">external_agent 尝试通过不同路径绕过 IAM</div>
+                    </div>
+                </div>
+                <div class="gw-demo-result" id="demoResult"></div>
+            </div>
+        </div>
+
+        <div class="gw-card">
+            <div class="gw-card-header">
+                <div class="gw-card-title"><span class="gw-live-dot"></span> Gateway Audit Log</div>
+                <button class="gw-btn gw-btn-cyan" onclick="loadAudit()" style="font-size:0.65rem;padding:4px 10px">Refresh</button>
+            </div>
+            <div class="gw-card-body" style="padding:0;max-height:400px;overflow-y:auto">
+                <table class="gw-audit-table">
+                    <thead><tr><th>Time</th><th>Agent</th><th>Action</th><th>Decision</th><th>Reason</th><th>Latency</th><th>Path</th></tr></thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/mode.js?v=1.0"></script><script src="/static/iam-explain.js?v=1.2"></script>
+    <script>
+        function loadStats() {
+            fetch('/api/gateway/stats').then(function(r) { return r.json(); }).then(function(d) {
+                document.getElementById('statTotal').textContent = d.total_requests || 0;
+                document.getElementById('statAllowed').textContent = d.allowed || 0;
+                document.getElementById('statDenied').textContent = d.denied || 0;
+                document.getElementById('statRevoked').textContent = d.auto_revoked || 0;
+                document.getElementById('statLatency').textContent = (d.avg_latency_ms || 0).toFixed(1) + 'ms';
+                document.getElementById('statDenyRate').textContent = d.deny_rate || '0%';
+            }).catch(function() {});
+        }
+
+        function loadAudit() {
+            fetch('/api/gateway/audit?limit=30').then(function(r) { return r.json(); }).then(function(data) {
+                var body = document.getElementById('auditBody');
+                if (!data || !data.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.2);padding:20px">No audit records yet</td></tr>'; return; }
+                var html = '';
+                data.slice().reverse().forEach(function(r) {
+                    var ts = new Date(r.timestamp * 1000).toLocaleTimeString();
+                    var badge = r.decision === 'allow' ? '<span class="gw-badge gw-badge-allow">ALLOW</span>' : (r.decision === 'error' ? '<span class="gw-badge gw-badge-error">ERROR</span>' : '<span class="gw-badge gw-badge-deny">DENY</span>');
+                    var reason = (r.reason || '').substring(0, 40);
+                    html += '<tr><td>' + ts + '</td><td style="color:#c4b5fd">' + r.agent_id + '</td><td style="color:#22d3ee;font-family:monospace;font-size:0.65rem">' + r.action + '</td><td>' + badge + '</td><td style="color:rgba(255,255,255,0.4);font-size:0.65rem">' + reason + '</td><td>' + (r.latency_ms || 0).toFixed(1) + 'ms</td><td style="font-family:monospace;font-size:0.6rem;color:rgba(255,255,255,0.25)">' + (r.path || '') + '</td></tr>';
+                });
+                body.innerHTML = html;
+            }).catch(function() {});
+        }
+
+        function doCheck() {
+            var agent = document.getElementById('checkAgent').value || 'doc_agent';
+            var action = document.getElementById('checkAction').value;
+            if (!action) { alert('Please enter an action'); return; }
+            fetch('/api/gateway/check', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({agent_id: agent, action: action}) }).then(function(r) { return r.json(); }).then(function(d) {
+                var el = document.getElementById('checkResult');
+                el.className = 'gw-result ' + (d.allowed ? 'allow' : 'deny');
+                var icon = d.allowed ? '✅' : '❌';
+                var info = icon + ' ' + (d.allowed ? 'ALLOWED' : 'BLOCKED') + ' — agent=' + d.agent_id + ' action=' + d.action;
+                if (d.trust_score != null) info += ' trust=' + d.trust_score.toFixed(2);
+                if (d.risk_score != null) info += ' risk=' + d.risk_score.toFixed(2);
+                if (d.blocked_at) info += ' blocked_at=' + d.blocked_at;
+                if (d.auto_revoked) info += ' 🔥 AUTO-REVOKED';
+                info += ' (' + (d.latency_ms || 0).toFixed(1) + 'ms)';
+                el.textContent = info;
+                loadStats();
+                loadAudit();
+            }).catch(function(e) { alert('Error: ' + e); });
+        }
+
+        function doMapCheck() {
+            var agent = document.getElementById('checkAgent').value || 'doc_agent';
+            var path = document.getElementById('checkPath').value;
+            var method = document.getElementById('checkMethod').value;
+            if (!path) { alert('Please enter a path'); return; }
+            fetch('/api/gateway/check', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({agent_id: agent, path: path, method: method}) }).then(function(r) { return r.json(); }).then(function(d) {
+                var el = document.getElementById('checkResult');
+                el.className = 'gw-result ' + (d.allowed ? 'allow' : 'deny');
+                var icon = d.allowed ? '✅' : '❌';
+                el.textContent = icon + ' ' + (d.allowed ? 'ALLOWED' : 'BLOCKED') + ' — path=' + path + ' → action=' + d.action + ' agent=' + d.agent_id + ' (' + (d.latency_ms || 0).toFixed(1) + 'ms)';
+                loadStats();
+                loadAudit();
+            }).catch(function(e) { alert('Error: ' + e); });
+        }
+
+        function runDemo(type) {
+            var url = type === 'escalation' ? '/api/gateway/demo/escalation' : '/api/gateway/demo/bypass-attempt';
+            fetch(url, { method: 'POST' }).then(function(r) { return r.json(); }).then(function(d) {
+                var el = document.getElementById('demoResult');
+                el.className = 'gw-demo-result show';
+                var html = '<div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;color:' + (type === 'escalation' ? 'var(--gw-red)' : 'var(--gw-yellow)') + '">' + d.description + '</div>';
+                html += '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:8px">' + d.summary + '</div>';
+                (d.results || []).forEach(function(r) {
+                    var icon = r.allowed ? '✅' : '❌';
+                    var bg = r.allowed ? 'rgba(52,211,153,0.05)' : 'rgba(239,68,68,0.05)';
+                    html += '<div class="gw-demo-row" style="background:' + bg + ';padding:6px 8px;border-radius:6px">';
+                    html += icon + ' <span style="color:#c4b5fd;font-weight:600">' + r.agent_id + '</span>';
+                    html += ' <span style="color:rgba(255,255,255,0.3)">→</span> ';
+                    html += '<span style="color:#22d3ee;font-family:monospace">' + (r.action || r.mapped_action || '') + '</span>';
+                    if (r.path) html += ' <span style="color:rgba(255,255,255,0.2);font-size:0.6rem">(' + r.path + ')</span>';
+                    if (r.trust_score != null) html += ' <span style="color:rgba(255,255,255,0.25)">trust=' + r.trust_score.toFixed(2) + '</span>';
+                    if (r.blocked_at) html += ' <span style="color:var(--gw-red);font-size:0.6rem">blocked@' + r.blocked_at + '</span>';
+                    if (r.auto_revoked) html += ' <span style="color:var(--gw-red)">🔥 AUTO-REVOKED</span>';
+                    html += '</div>';
+                });
+                el.innerHTML = html;
+                loadStats();
+                loadAudit();
+            }).catch(function(e) { alert('Error: ' + e); });
+        }
+
+        loadStats();
+        loadAudit();
+        setInterval(function() { loadStats(); loadAudit(); }, 5000);
+    </script>
+</body>
+</html>

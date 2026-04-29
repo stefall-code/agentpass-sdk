@@ -1,0 +1,15 @@
+services:
+  agent-iam:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - iam-db:/app/agent_iam.db
+    environment:
+      - DATABASE_URL=sqlite:///./agent_iam.db
+      - JWT_SECRET=change-me-in-production
+      - BCRYPT_ROUNDS=12
+    restart: unless-stopped
+
+volumes:
+  iam-db:

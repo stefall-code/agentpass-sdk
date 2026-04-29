@@ -1,0 +1,247 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统一治理控制台 - AgentPass v2.5</title>
+    <link rel="stylesheet" href="/static/styles.css?v=3.2">
+    <style>
+        html[data-theme="dark"]{--bg:#000;--bg-alt:#1c1c1e;--bg-glass:rgba(28,28,30,0.72);--text:#f5f5f7;--border:rgba(255,255,255,0.08);--font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;--mono:"SF Mono","JetBrains Mono","Fira Code",ui-monospace,Menlo,Consolas,monospace;--blue:#0071e3;--nav-height:52px}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{min-height:100vh;background:#020408;color:#f5f5f7;font-family:var(--font)}
+        .gov-main{padding:calc(var(--nav-height) + 12px) 20px 40px;max-width:1400px;margin:0 auto}
+
+        .gov-top{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;margin-bottom:20px;background:rgba(255,255,255,0.03);border-radius:14px;border:1px solid rgba(255,255,255,0.06)}
+        .gov-top-stats{display:flex;gap:24px;align-items:center}
+        .gov-top-stat{text-align:center}
+        .gov-top-stat .val{font-size:1.3rem;font-weight:800}
+        .gov-top-stat .lbl{font-size:0.5rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.06em}
+
+        .gov-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        @media(max-width:960px){.gov-layout{grid-template-columns:1fr}}
+
+        .gov-card{background:rgba(255,255,255,0.03);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:16px}
+        .gov-card h3{font-size:0.9rem;margin-bottom:14px}
+
+        .flow-svg{width:100%;height:180px}
+        .flow-node{cursor:pointer;transition:all 0.3s}
+        .flow-node:hover{filter:brightness(1.3)}
+        .flow-line{stroke-dasharray:8 4;animation:flowDash 1.5s linear infinite}
+        @keyframes flowDash{to{stroke-dashoffset:-24}}
+        .flow-particle{animation:flowMove 2s ease-in-out infinite}
+        @keyframes flowMove{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0}}
+
+        .platform-tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.6rem;font-weight:700;letter-spacing:0.04em}
+        .tag-feishu{background:rgba(0,113,227,0.15);color:#64d2ff}
+        .tag-web{background:rgba(52,211,153,0.15);color:#34d399}
+        .tag-api{background:rgba(251,191,36,0.15);color:#fbbf24}
+
+        .stat-card{background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;border:1px solid rgba(255,255,255,0.04)}
+        .stat-card .sc-val{font-size:1.6rem;font-weight:800}
+        .stat-card .sc-lbl{font-size:0.6rem;color:rgba(255,255,255,0.3);margin-top:2px}
+        .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+        .event-item{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.75rem;animation:govSlide 0.3s ease}
+        @keyframes govSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        .event-header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+        .event-time{color:rgba(255,255,255,0.2);font-size:0.6rem}
+        .event-detail{color:rgba(255,255,255,0.35);margin-top:4px;font-size:0.65rem}
+
+        .agent-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+        .agent-name{font-size:0.82rem;font-weight:600}
+        .agent-trust{font-size:0.9rem;font-weight:800}
+        .agent-status{font-size:0.65rem;padding:2px 8px;border-radius:10px}
+        .status-safe{background:rgba(52,211,153,0.15);color:#34d399}
+        .status-warn{background:rgba(251,191,36,0.15);color:#fbbf24}
+        .status-danger{background:rgba(239,68,68,0.15);color:#ef4444}
+        .status-revoked{background:rgba(239,68,68,0.2);color:#ef4444;animation:govPulse 1s infinite}
+        @keyframes govPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+        .trust-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:4px}
+        .trust-fill{height:100%;border-radius:2px;transition:width 0.6s ease,background 0.6s ease}
+
+        .gov-btn{padding:8px 16px;border-radius:8px;border:none;font-size:0.78rem;cursor:pointer;font-weight:600;transition:all 0.2s}
+        .gov-btn-primary{background:linear-gradient(135deg,#0071e3,#64d2ff);color:#fff}
+        .gov-btn-danger{background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25)}
+        .gov-btn-warn{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.25)}
+        .gov-btn-ghost{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.08)}
+
+        .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .demo-card{padding:14px;border-radius:10px;cursor:pointer;border:1px solid rgba(255,255,255,0.06);transition:all 0.2s;background:rgba(255,255,255,0.02)}
+        .demo-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.12)}
+        .demo-card .dc-icon{font-size:1.3rem;margin-bottom:4px}
+        .demo-card .dc-title{font-size:0.78rem;font-weight:700;margin-bottom:2px}
+        .demo-card .dc-desc{font-size:0.6rem;color:rgba(255,255,255,0.35)}
+
+        .gov-alert{position:fixed;top:0;left:0;right:0;z-index:9999;padding:14px 24px;text-align:center;background:linear-gradient(135deg,rgba(239,68,68,0.9),rgba(220,38,38,0.9));color:white;font-weight:700;font-size:0.95rem;backdrop-filter:blur(12px);animation:govSlide 0.4s ease}
+    </style>
+</head>
+<body>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="/">
+          <svg class="nav-logo" width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="7" fill="url(#lgGov)"/>
+            <path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs><linearGradient id="lgGov" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#0071E3"/><stop offset="1" stop-color="#64D2FF"/></linearGradient></defs>
+          </svg>
+          <span class="nav-title">统一治理控制台</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Console</a>
+          <a href="/feishu">飞书交互</a>
+          <a href="/audit">Audit</a>
+          <a href="/trust">Trust</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="gov-main">
+        <div class="gov-top">
+            <div class="gov-top-stats">
+                <div class="gov-top-stat"><div class="val" style="color:#f5f5f7" id="statTotal">0</div><div class="lbl">Total Events</div></div>
+                <div class="gov-top-stat"><div class="val" style="color:#34d399" id="statSuccess">0</div><div class="lbl">✅ Success</div></div>
+                <div class="gov-top-stat"><div class="val" style="color:#ef4444" id="statDenied">0</div><div class="lbl">❌ Denied</div></div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,0.06)"></div>
+                <div class="gov-top-stat"><div class="val" style="color:#fbbf24" id="statDenyRate">0%</div><div class="lbl">Deny Rate</div></div>
+                <div class="gov-top-stat"><div class="val" style="color:#ef4444" id="statRevoked">0</div><div class="lbl">🔥 Revoked</div></div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="gov-btn gov-btn-ghost" onclick="GOV.refresh()">🔄 刷新</button>
+            </div>
+        </div>
+
+        <div class="gov-layout">
+            <div>
+                <div class="gov-card">
+                    <h3 style="color:#64d2ff">🌐 跨平台流量图</h3>
+                    <svg class="flow-svg" viewBox="0 0 600 180" id="flowSvg">
+                        <defs>
+                            <linearGradient id="gFeishu" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0071e3"/><stop offset="100%" stop-color="#64d2ff"/></linearGradient>
+                            <linearGradient id="gWeb" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#6ee7b7"/></linearGradient>
+                            <linearGradient id="gApi" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#fde68a"/></linearGradient>
+                            <linearGradient id="gIam" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#c4b5fd"/></linearGradient>
+                            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        </defs>
+                        <line x1="100" y1="40" x2="280" y2="90" stroke="rgba(0,113,227,0.3)" stroke-width="2" class="flow-line"/>
+                        <line x1="100" y1="90" x2="280" y2="90" stroke="rgba(52,211,153,0.3)" stroke-width="2" class="flow-line"/>
+                        <line x1="100" y1="140" x2="280" y2="90" stroke="rgba(251,191,36,0.3)" stroke-width="2" class="flow-line"/>
+                        <line x1="320" y1="90" x2="460" y2="60" stroke="rgba(139,92,246,0.3)" stroke-width="2" class="flow-line"/>
+                        <line x1="320" y1="90" x2="460" y2="120" stroke="rgba(139,92,246,0.3)" stroke-width="2" class="flow-line"/>
+                        <circle r="4" fill="#0071e3" class="flow-particle"><animateMotion dur="2s" repeatCount="indefinite" path="M100,40 L280,90"/></circle>
+                        <circle r="4" fill="#34d399" class="flow-particle"><animateMotion dur="2.2s" repeatCount="indefinite" path="M100,90 L280,90"/></circle>
+                        <circle r="4" fill="#fbbf24" class="flow-particle"><animateMotion dur="1.8s" repeatCount="indefinite" path="M100,140 L280,90"/></circle>
+                        <circle r="4" fill="#8b5cf6" class="flow-particle"><animateMotion dur="1.5s" repeatCount="indefinite" path="M320,90 L460,60"/></circle>
+                        <circle r="4" fill="#8b5cf6" class="flow-particle"><animateMotion dur="1.7s" repeatCount="indefinite" path="M320,90 L460,120"/></circle>
+                        <g class="flow-node" onclick="GOV.filterPlatform('feishu')">
+                            <rect x="40" y="20" width="120" height="40" rx="8" fill="url(#gFeishu)" opacity="0.9" filter="url(#glow)"/>
+                            <text x="100" y="45" text-anchor="middle" fill="white" font-size="13" font-weight="700">💬 飞书</text>
+                        </g>
+                        <g class="flow-node" onclick="GOV.filterPlatform('web')">
+                            <rect x="40" y="70" width="120" height="40" rx="8" fill="url(#gWeb)" opacity="0.9" filter="url(#glow)"/>
+                            <text x="100" y="95" text-anchor="middle" fill="white" font-size="13" font-weight="700">🌐 Web</text>
+                        </g>
+                        <g class="flow-node" onclick="GOV.filterPlatform('api')">
+                            <rect x="40" y="120" width="120" height="40" rx="8" fill="url(#gApi)" opacity="0.9" filter="url(#glow)"/>
+                            <text x="100" y="145" text-anchor="middle" fill="white" font-size="13" font-weight="700">⚡ API</text>
+                        </g>
+                        <g class="flow-node">
+                            <rect x="260" y="65" width="120" height="50" rx="10" fill="url(#gIam)" opacity="0.95" filter="url(#glow)"/>
+                            <text x="320" y="87" text-anchor="middle" fill="white" font-size="11" font-weight="700">🔐 IAM</text>
+                            <text x="320" y="103" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9">Gateway</text>
+                        </g>
+                        <g class="flow-node">
+                            <rect x="430" y="40" width="120" height="40" rx="8" fill="rgba(52,211,153,0.2)" stroke="rgba(52,211,153,0.3)" stroke-width="1"/>
+                            <text x="490" y="65" text-anchor="middle" fill="#34d399" font-size="12" font-weight="600">📄 doc_agent</text>
+                        </g>
+                        <g class="flow-node">
+                            <rect x="430" y="100" width="120" height="40" rx="8" fill="rgba(0,113,227,0.2)" stroke="rgba(0,113,227,0.3)" stroke-width="1"/>
+                            <text x="490" y="125" text-anchor="middle" fill="#64d2ff" font-size="12" font-weight="600">📊 data_agent</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="gov-card">
+                    <h3 style="color:#34d399">📊 平台风险统计</h3>
+                    <div class="stat-grid" id="platformStats">
+                        <div class="stat-card"><div class="sc-val" style="color:#64d2ff" id="psFeishuTotal">0</div><div class="sc-lbl">💬 飞书请求</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-top:4px">Deny: <span id="psFeishuDeny">0</span> | Risk: <span id="psFeishuRisk">0.1</span></div></div>
+                        <div class="stat-card"><div class="sc-val" style="color:#34d399" id="psWebTotal">0</div><div class="sc-lbl">🌐 Web 请求</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-top:4px">Deny: <span id="psWebDeny">0</span> | Risk: <span id="psWebRisk">0.3</span></div></div>
+                        <div class="stat-card"><div class="sc-val" style="color:#fbbf24" id="psApiTotal">0</div><div class="sc-lbl">⚡ API 请求</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-top:4px">Deny: <span id="psApiDeny">0</span> | Risk: <span id="psApiRisk">0.5</span></div></div>
+                    </div>
+                </div>
+
+                <div class="gov-card">
+                    <h3 style="color:#f87171">🎬 跨平台演示</h3>
+                    <div class="demo-grid">
+                        <div class="demo-card" onclick="console.log('[DEBUG] runDemo clicked');GOV.runDemo()">
+                            <div class="dc-icon">🎬</div>
+                            <div class="dc-title" style="color:#c4b5fd">完整跨平台演示</div>
+                            <div class="dc-desc">飞书正常 → Web正常 → API攻击 → 撤销 → 再次请求</div>
+                        </div>
+                        <div class="demo-card" onclick="console.log('[DEBUG] feishu clicked');GOV.demoPlatform('feishu')">
+                            <div class="dc-icon">💬</div>
+                            <div class="dc-title" style="color:#64d2ff">飞书请求</div>
+                            <div class="dc-desc">低风险平台 · 正常流程</div>
+                        </div>
+                        <div class="demo-card" onclick="console.log('[DEBUG] web clicked');GOV.demoPlatform('web')">
+                            <div class="dc-icon">🌐</div>
+                            <div class="dc-title" style="color:#34d399">Web 请求</div>
+                            <div class="dc-desc">中风险平台 · 标准流程</div>
+                        </div>
+                        <div class="demo-card" onclick="console.log('[DEBUG] api clicked');GOV.demoPlatform('api')">
+                            <div class="dc-icon">⚡</div>
+                            <div class="dc-title" style="color:#fbbf24">API 攻击</div>
+                            <div class="dc-desc">高风险平台 · 越权访问</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="gov-card">
+                    <h3 style="color:#c4b5fd">🤖 Agent 治理</h3>
+                    <div id="agentList"></div>
+                    <div style="margin-top:12px;display:flex;gap:8px">
+                        <button class="gov-btn gov-btn-warn" onclick="GOV.revokeAgent('external_agent')">🔥 撤销 external_agent</button>
+                        <button class="gov-btn gov-btn-ghost" onclick="GOV.resetAgent('external_agent')">🔄 重置 external_agent</button>
+                    </div>
+                </div>
+
+                <div class="gov-card">
+                    <h3 style="color:#fbbf24">📡 实时事件流</h3>
+                    <div id="eventStream" style="max-height:360px;overflow-y:auto">
+                        <div style="color:rgba(255,255,255,0.2);text-align:center;padding:16px;font-size:0.82rem">等待事件...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="govDebug" style="position:fixed;bottom:0;left:0;right:0;max-height:120px;overflow-y:auto;background:rgba(0,0,0,0.9);border-top:1px solid rgba(255,255,255,0.1);padding:8px 16px;font-size:0.7rem;color:#0f0;font-family:var(--mono);z-index:9998"></div>
+    <script src="/static/mode.js?v=1.0"></script><script src="/static/iam-explain.js?v=1.2"></script>
+    <script src="/static/governance.js?v=2.8"></script>
+    <script>
+    window.addEventListener('load', function() {
+        console.log('[GOV-DEBUG] GOV object:', typeof GOV);
+        console.log('[GOV-DEBUG] GOV.demoPlatform:', typeof GOV.demoPlatform);
+        console.log('[GOV-DEBUG] GOV.runDemo:', typeof GOV.runDemo);
+        console.log('[GOV-DEBUG] GOV.revokeAgent:', typeof GOV.revokeAgent);
+
+        var origDemoPlatform = GOV.demoPlatform;
+        GOV.demoPlatform = function(platform) {
+            var debugEl = document.getElementById('govDebug');
+            if (debugEl) debugEl.innerHTML += '<div>[CLICK] demoPlatform(' + platform + ') called at ' + new Date().toLocaleTimeString() + '</div>';
+            console.log('[GOV-INTERCEPT] demoPlatform called:', platform);
+            return origDemoPlatform(platform);
+        };
+
+        var origRunDemo = GOV.runDemo;
+        GOV.runDemo = function() {
+            var debugEl = document.getElementById('govDebug');
+            if (debugEl) debugEl.innerHTML += '<div>[CLICK] runDemo() called at ' + new Date().toLocaleTimeString() + '</div>';
+            console.log('[GOV-INTERCEPT] runDemo called');
+            return origRunDemo();
+        };
+    });
+    </script>
+</body>
+</html>
